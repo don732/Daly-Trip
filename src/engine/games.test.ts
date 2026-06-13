@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { deriveGames, normalizeFormat, DEFAULT_SIDES } from '@/engine/games'
+import { normalizeFormat, DEFAULT_SIDES } from '@/engine/games'
 import { makeRound } from '@/engine/tripFactory'
 
 describe('normalizeFormat', () => {
