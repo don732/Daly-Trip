@@ -1,4 +1,4 @@
-import type { LeaderRow, Trip } from '@/types/trip'
+import type { Trip } from '@/types/trip'
 import { computeSkins } from '@/engine/scoring'
 
 export interface SettlementLine {
@@ -18,7 +18,7 @@ export function computeSettlements(trip: Trip): SettlementLine[] {
     balances[p.id] = 0
   })
   const skins = computeSkins(trip)
-  Object.entries(skins.winners).forEach(([hole, winnerId]) => {
+  Object.entries(skins.winners).forEach(([, winnerId]) => {
     if (!winnerId) return
     const stake = trip.games.find(g => g.type === 'skins')?.stake || 5
     trip.players.forEach(p => {
@@ -58,7 +58,7 @@ export function computeSettlements(trip: Trip): SettlementLine[] {
   return lines
 }
 
-export function totalTripMoney(leaderboard: LeaderRow[], trip: Trip): Record<string, number> {
+export function totalTripMoney(trip: Trip): Record<string, number> {
   const totals: Record<string, number> = {}
   trip.players.forEach(p => {
     totals[p.id] = 0

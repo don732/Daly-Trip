@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
-import type { AppState, FeedPost, Trip } from '@/types/trip'
+import type { AppState, Trip } from '@/types/trip'
 import { createDemoTrip } from '@/demo/seedTrip'
 import { findTripByCode, getTrip, loadState, saveState, saveTrip } from '@/localStore'
 import { pushTripToCloud } from '@/cloudStore'

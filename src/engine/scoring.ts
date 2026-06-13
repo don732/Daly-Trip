@@ -1,4 +1,4 @@
-import type { Course, Hole, LeaderRow, Player, Round, RoundFormat, SkinsState, Trip } from '@/types/trip'
+import type { Hole, LeaderRow, Player, Round, RoundFormat, SkinsState, Trip } from '@/types/trip'
 import { normalizeFormat } from '@/engine/games'
 
 export function strokesOnHole(hcp: number, holeHcp: number): number {

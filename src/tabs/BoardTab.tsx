@@ -11,7 +11,7 @@ export function BoardTab({ trip, onPlayerClick }: { trip: Trip; onPlayerClick?: 
   const [view, setView] = useState<(typeof VIEWS)[number]>('Net')
   const leaders = useMemo(() => buildLeaderboard(trip), [trip])
   const skins = useMemo(() => computeSkins(trip), [trip])
-  const money = useMemo(() => totalTripMoney(leaders, trip), [leaders, trip])
+  const money = useMemo(() => totalTripMoney(trip), [trip])
   const teams = useMemo(() => computeTeamBoard(trip), [trip])
 
   const sorted = useMemo(() => {
