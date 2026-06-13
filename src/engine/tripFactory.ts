@@ -2,6 +2,7 @@ import type { Player, Round, TeamKey, Trip, TripFormInput } from '@/types/trip'
 import { uid, tripCode } from '@/styles'
 import { BLACK_CYPRESS, makePlayer } from '@/engine/courses'
 import { DEFAULT_SIDES, DEFAULT_STAKE, deriveGames, emptyPutts, emptyScores, normalizeFormat } from '@/engine/games'
+import { syncRoundFromTrip } from '@/engine/scoring'
 
 export function autoTeams(players: Player[]): { pine: string[]; sand: string[] } {
   const sorted = [...players].sort((a, b) => a.hcp - b.hcp)
@@ -80,6 +81,7 @@ export function makeTripFromForm(form: TripFormInput): Trip {
       playerIds,
       stake: form.stake,
       skins: form.skins,
+      skinsStake: form.skinsStake,
       teamIds
     })
   )
@@ -141,7 +143,8 @@ export function addPlayerToTrip(trip: Trip, nick: string, hcp: number, team?: Te
 }
 
 export function switchActiveRound(trip: Trip, index: number): Trip {
-  const next = { ...trip, activeRoundIndex: index }
+  const synced = syncRoundFromTrip(trip)
+  const next = { ...synced, activeRoundIndex: index }
   const round = next.rounds[index]
   if (!round) return next
   return {

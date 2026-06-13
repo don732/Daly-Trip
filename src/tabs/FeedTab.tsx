@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { MessageCircle, Share2 } from 'lucide-react'
+import { MessageCircle } from 'lucide-react'
+import { ShareQr } from '@/components/ShareQr'
 import type { Trip } from '@/types/trip'
 import { c } from '@/styles'
 
@@ -15,24 +16,11 @@ export function FeedTab({
   const [draft, setDraft] = useState('')
   const me = trip.players[0]
 
-  const share = () => {
-    const text = `${trip.name}\nJoin code: ${trip.code}\nGet the app: https://dalytrips.app`
-    if (navigator.share) navigator.share({ title: 'Daly Trips', text }).catch(() => undefined)
-    else navigator.clipboard.writeText(text).catch(() => undefined)
-  }
-
   return (
     <div className="dt-fade-in" style={{ padding: '16px 16px 100px' }}>
-      <button
-        className="dt-btn dt-btn-ghost"
-        onClick={share}
-        style={{ width: '100%', padding: 12, borderRadius: 12, marginBottom: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
-      >
-        <Share2 size={16} />
-        Share trip · {trip.code}
-      </button>
+      <ShareQr code={trip.code} tripName={trip.name} />
 
-      <div className="dt-card" style={{ padding: 12, marginBottom: 14 }}>
+      <div className="dt-card" style={{ padding: 12, marginTop: 14, marginBottom: 14 }}>
         <textarea
           value={draft}
           onChange={e => setDraft(e.target.value)}

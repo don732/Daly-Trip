@@ -1,4 +1,4 @@
-import type { Hole, LeaderRow, Player, Round, RoundFormat, SkinsState, Trip } from '@/types/trip'
+import type { Hole, LeaderRow, Player, Round, RoundFormat, SkinsState, Trip, Course, EngineGame } from '@/types/trip'
 import { normalizeFormat } from '@/engine/games'
 
 export function strokesOnHole(hcp: number, holeHcp: number): number {
@@ -45,18 +45,24 @@ export function buildLeaderboard(trip: Trip): LeaderRow[] {
   })
 }
 
-export function computeSkins(trip: Trip): SkinsState {
-  const skinsGame = trip.games.find(g => g.type === 'skins')
+export function computeSkinsForRound(
+  players: Player[],
+  course: Course,
+  games: EngineGame[],
+  scores: Record<string, (number | null)[]>
+): SkinsState {
+  const skinsGame = games.find(g => g.type === 'skins')
   const stake = skinsGame?.stake || 5
   const winners: Record<number, string | null> = {}
   let carry = 0
   let pot = 0
   for (let h = 0; h < 18; h += 1) {
-    const hole = trip.course.holes[h]
+    const hole = course.holes[h]
+    if (!hole) continue
     let bestNet: number | null = null
     let bestIds: string[] = []
-    trip.players.forEach(p => {
-      const gross = trip.scores[p.id]?.[h]
+    players.forEach(p => {
+      const gross = scores[p.id]?.[h]
       if (gross == null) return
       const n = netScore(gross, strokesOnHole(p.hcp, hole.hcp))
       if (bestNet == null || n < bestNet) {
@@ -77,6 +83,10 @@ export function computeSkins(trip: Trip): SkinsState {
     }
   }
   return { pot, carry, winners }
+}
+
+export function computeSkins(trip: Trip): SkinsState {
+  return computeSkinsForRound(trip.players, trip.course, trip.games, trip.scores)
 }
 
 const BEST_BALL_FORMATS: RoundFormat[] = ['bestball', 'fourball', 'shamble', 'chapman']

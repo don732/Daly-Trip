@@ -3,6 +3,9 @@ import { makePlayer } from '@/engine/courses'
 import { makeRound, switchActiveRound } from '@/engine/tripFactory'
 import { uid } from '@/styles'
 
+export const DEMO_TRIP_ID = 'seed-demo-boys26'
+export const DEMO_TRIP_CODE = 'BOYS26'
+
 const demoScoresR1: Record<string, number[]> = {
   mort: [4, 5, 3, 5, 4, 5, 3, 5, 4, 4, 4, 3, 5, 4, 4, 3, 5, 4],
   bank: [5, 4, 4, 6, 5, 4, 4, 6, 5, 5, 5, 4, 6, 5, 5, 4, 6, 5],
@@ -57,8 +60,8 @@ export function createDemoTrip(): Trip {
   )
   round1.putts = Object.fromEntries(playerIds.map(id => [id, Array(18).fill(2)]))
   const trip: Trip = {
-    id: uid('trip'),
-    code: 'BOYS26',
+    id: DEMO_TRIP_ID,
+    code: DEMO_TRIP_CODE,
     name: 'Boys Trip 2026',
     location: 'Kiawah Sound, SC',
     start: '2026-03-12',

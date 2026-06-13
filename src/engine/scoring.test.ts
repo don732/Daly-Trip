@@ -1,0 +1,36 @@
+import { describe, expect, it } from 'vitest'
+import { strokesOnHole, netScore, buildLeaderboard, computeSkins } from '@/engine/scoring'
+import { createDemoTrip } from '@/demo/seedTrip'
+
+describe('strokesOnHole', () => {
+  it('allocates extra strokes on lowest handicap holes', () => {
+    expect(strokesOnHole(18, 1)).toBe(2)
+    expect(strokesOnHole(18, 18)).toBe(1)
+    expect(strokesOnHole(4, 10)).toBe(1)
+    expect(strokesOnHole(4, 17)).toBe(0)
+  })
+})
+
+describe('netScore', () => {
+  it('subtracts handicap strokes from gross', () => {
+    expect(netScore(5, 1)).toBe(4)
+  })
+})
+
+describe('buildLeaderboard', () => {
+  it('computes thru and to-par for demo trip', () => {
+    const trip = createDemoTrip()
+    const rows = buildLeaderboard(trip)
+    expect(rows.length).toBe(8)
+    expect(rows.every(r => r.thru === 18)).toBe(true)
+  })
+})
+
+describe('computeSkins', () => {
+  it('returns pot and winners for scored holes', () => {
+    const trip = createDemoTrip()
+    const skins = computeSkins(trip)
+    expect(skins.pot).toBeGreaterThan(0)
+    expect(Object.keys(skins.winners).length).toBeGreaterThan(0)
+  })
+})

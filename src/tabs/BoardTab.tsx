@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { buildLeaderboard, computeSkins, computeTeamBoard } from '@/engine/scoring'
-import { totalTripMoney } from '@/engine/money'
+import { totalTripMoney, tripSkinsPot } from '@/engine/money'
 import type { Player, Trip } from '@/types/trip'
 import { c, formatScore } from '@/styles'
 import { ScoreChip } from '@/components/TabBar'
@@ -82,7 +82,7 @@ export function BoardTab({ trip, onPlayerClick }: { trip: Trip; onPlayerClick?: 
 
       {view === 'Skins $' ? (
         <div className="dt-card" style={{ padding: 12, marginTop: 12, fontSize: 12, color: c.muted }}>
-          Skins pot ${skins.pot}{skins.carry ? ` · ${skins.carry} carrying` : ''}
+          Active round pot ${skins.pot}{skins.carry ? ` · ${skins.carry} carrying` : ''} · Trip total ${tripSkinsPot(trip)}
         </div>
       ) : null}
     </div>

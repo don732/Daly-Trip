@@ -13,6 +13,9 @@ import { PlayTab } from '@/tabs/PlayTab'
 import { BoardTab } from '@/tabs/BoardTab'
 import { MoneyTab } from '@/tabs/MoneyTab'
 import { FeedTab } from '@/tabs/FeedTab'
+import { HighlightReel } from '@/components/HighlightReel'
+import { SyncStatus } from '@/components/SyncStatus'
+import { DEMO_TRIP_ID } from '@/demo/seedTrip'
 import { BUILD_STAMP, c } from '@/styles'
 
 const TABS = [
@@ -32,22 +35,25 @@ export function MainApp() {
   const [clubhouseOpen, setClubhouseOpen] = useState(false)
   const [starterOpen, setStarterOpen] = useState(false)
   const [profilePlayer, setProfilePlayer] = useState<Player | null>(null)
+  const [movieOpen, setMovieOpen] = useState(false)
 
   useEffect(() => {
     if (!tripId) return
     if (tripId === 'demo') {
-      const existing = Object.values(state.trips).find(t => t.seed)
-      if (existing) {
-        setActiveTrip(existing.id)
-      } else {
-        loadDemo()
-      }
+      loadDemo()
+      navigate(`/trip/${DEMO_TRIP_ID}`, { replace: true })
+      return
+    }
+    if (tripId === DEMO_TRIP_ID) {
+      const existing = getTrip(state, DEMO_TRIP_ID)
+      if (existing) setActiveTrip(DEMO_TRIP_ID)
+      else loadDemo()
       return
     }
     const found = getTrip(state, tripId)
     if (found) setActiveTrip(tripId)
     else if (tripId.toUpperCase() === 'BOYS26') loadDemo()
-  }, [tripId, state.trips, setActiveTrip, loadDemo])
+  }, [tripId, state.trips, setActiveTrip, loadDemo, navigate])
 
   if (!trip) {
     return (
@@ -87,7 +93,10 @@ export function MainApp() {
           }}
         >
           <div>
-            <div style={{ fontSize: 15, fontWeight: 800, color: c.cream }}>{trip.name}</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <div style={{ fontSize: 15, fontWeight: 800, color: c.cream }}>{trip.name}</div>
+              <SyncStatus />
+            </div>
             <div className="dt-cond" style={{ fontSize: 10, color: c.muted, letterSpacing: '.06em' }}>
               {BUILD_STAMP} · {trip.code}
             </div>
@@ -130,7 +139,7 @@ export function MainApp() {
           </div>
         </header>
 
-        {tab === 'trip' ? <TripTab trip={trip} onRoundChange={handleRoundChange} /> : null}
+        {tab === 'trip' ? <TripTab trip={trip} onRoundChange={handleRoundChange} onShowMovie={() => setMovieOpen(true)} /> : null}
         {tab === 'play' ? <PlayTab trip={trip} onScore={handleScore} /> : null}
         {tab === 'board' ? <BoardTab trip={trip} onPlayerClick={setProfilePlayer} /> : null}
         {tab === 'money' ? <MoneyTab trip={trip} /> : null}
@@ -147,6 +156,7 @@ export function MainApp() {
         {clubhouseOpen ? <ClubhousePanel onClose={() => setClubhouseOpen(false)} /> : null}
         {starterOpen ? <StarterChat trip={trip} onClose={() => setStarterOpen(false)} /> : null}
         {profilePlayer ? <PlayerProfile player={profilePlayer} trip={trip} onClose={() => setProfilePlayer(null)} /> : null}
+        {movieOpen ? <HighlightReel trip={trip} onClose={() => setMovieOpen(false)} /> : null}
         {menuOpen ? (
           <div style={{ position: 'fixed', inset: 0, zIndex: 100, background: 'rgba(0,0,0,.75)' }} onClick={() => setMenuOpen(false)}>
             <div

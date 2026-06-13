@@ -168,6 +168,7 @@ export interface TripFormInput {
   gameFormat: RoundFormat
   stake: number
   skins: boolean
+  skinsStake?: number
   rounds: Array<{ course: string; name?: string }>
 }
 

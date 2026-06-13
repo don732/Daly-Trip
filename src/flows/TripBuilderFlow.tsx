@@ -1,12 +1,14 @@
 import { useMemo, useState, type CSSProperties } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ArrowLeft, ChevronRight, CreditCard } from 'lucide-react'
+import { ArrowLeft, ChevronRight, CreditCard, Plus, Trash2 } from 'lucide-react'
 import { useTripStore } from '@/context/TripContext'
 import { makeTripFromForm } from '@/engine/tripFactory'
-import { startCheckout, TRIP_PRICE } from '@/lib/checkout'
+import { getSession } from '@/lib/auth'
+import { recordTripPayment, startCheckout, TRIP_PRICE } from '@/lib/checkout'
 import type { TeamKey, TripBuilderForm } from '@/types/trip'
 import { c } from '@/styles'
 import { Modal, SheetHeader } from '@/components/Modal'
+import { CoursePicker } from '@/components/CoursePicker'
 
 const STEPS = ['Players', 'Pay', 'Event Details'] as const
 
@@ -18,7 +20,7 @@ function defaultForm(): TripBuilderForm {
     end: new Date(Date.now() + 2 * 86400000).toISOString().slice(0, 10),
     headcount: 4,
     players: Array.from({ length: 4 }, (_, i) => ({
-      nick: `Player ${i + 1}`,
+      nick: i === 0 ? 'Organizer' : `Player ${i + 1}`,
       hcp: 18,
       team: (i % 2 === 0 ? 'pine' : 'sand') as TeamKey,
       venmo: ''
@@ -48,7 +50,7 @@ export function TripBuilderFlow() {
       const existing = form.players[i]
       return (
         existing || {
-          nick: `Player ${i + 1}`,
+          nick: i === 0 ? 'Organizer' : `Player ${i + 1}`,
           hcp: 18,
           team: (i % 2 === 0 ? 'pine' : 'sand') as TeamKey,
           venmo: ''
@@ -58,7 +60,7 @@ export function TripBuilderFlow() {
     setForm(f => ({ ...f, headcount: n, players }))
   }
 
-  const finish = () => {
+  const finish = async () => {
     const trip = makeTripFromForm({
       name: form.name || 'Untitled Trip',
       location: form.location,
@@ -70,16 +72,27 @@ export function TripBuilderFlow() {
       gameFormat: form.format,
       stake: form.stake,
       skins: form.skinsOn,
+      skinsStake: form.skinsStake,
       rounds: form.rounds.map(r => ({ course: r.courseName, name: r.name }))
     })
     upsertTrip(trip)
+    if (paid) {
+      const session = await getSession()
+      await recordTripPayment({
+        tripId: trip.id,
+        userId: session?.user?.id || null,
+        amount: form.headcount * TRIP_PRICE,
+        sessionId: `local_${trip.id}`,
+        status: 'paid'
+      })
+    }
     navigate(`/trip/${trip.id}`)
   }
 
   const handlePay = async () => {
     setPaying(true)
-    await startCheckout('new', form.headcount)
-    setPaid(true)
+    const result = await startCheckout('new', form.headcount)
+    setPaid(result.paid)
     setPaying(false)
     setStep(2)
   }
@@ -161,6 +174,16 @@ export function TripBuilderFlow() {
                     <option value="pine">Pine</option>
                     <option value="sand">Sand</option>
                   </select>
+                  <input
+                    value={p.venmo}
+                    onChange={e => {
+                      const players = [...form.players]
+                      players[i] = { ...players[i], venmo: e.target.value }
+                      setForm(f => ({ ...f, players }))
+                    }}
+                    placeholder={i === 0 ? 'Your Venmo @handle' : 'Venmo (optional)'}
+                    style={{ ...inputStyle, margin: 0, gridColumn: '1 / -1' }}
+                  />
                 </div>
               ))}
             </div>
@@ -203,16 +226,56 @@ export function TripBuilderFlow() {
               <Field label="Start" value={form.start} type="date" onChange={v => setForm(f => ({ ...f, start: v }))} />
               <Field label="End" value={form.end} type="date" onChange={v => setForm(f => ({ ...f, end: v }))} />
             </div>
-            <Field
-              label="Round 1 course"
-              value={form.rounds[0]?.courseName || ''}
-              onChange={v =>
+
+            <div className="dt-cond" style={{ fontSize: 10, letterSpacing: '.12em', color: c.muted, textTransform: 'uppercase', margin: '16px 0 8px' }}>
+              Rounds
+            </div>
+            {form.rounds.map((r, ri) => (
+              <div key={ri} className="dt-card" style={{ padding: 12, marginBottom: 10 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                  <input
+                    value={r.name}
+                    onChange={e => {
+                      const rounds = [...form.rounds]
+                      rounds[ri] = { ...rounds[ri], name: e.target.value }
+                      setForm(f => ({ ...f, rounds }))
+                    }}
+                    style={{ ...inputStyle, margin: 0, flex: 1 }}
+                  />
+                  {form.rounds.length > 1 ? (
+                    <button
+                      className="dt-btn"
+                      onClick={() => setForm(f => ({ ...f, rounds: f.rounds.filter((_, j) => j !== ri) }))}
+                      style={{ marginLeft: 8, padding: 8, background: 'transparent', color: c.muted, border: 'none' }}
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  ) : null}
+                </div>
+                <CoursePicker
+                  value={r.courseName}
+                  onChange={v => {
+                    const rounds = [...form.rounds]
+                    rounds[ri] = { ...rounds[ri], courseName: v }
+                    setForm(f => ({ ...f, rounds }))
+                  }}
+                />
+              </div>
+            ))}
+            <button
+              className="dt-btn dt-btn-ghost"
+              onClick={() =>
                 setForm(f => ({
                   ...f,
-                  rounds: [{ ...f.rounds[0], courseName: v, name: f.rounds[0]?.name || 'Round 1' }]
+                  rounds: [...f.rounds, { name: `Round ${f.rounds.length + 1}`, courseName: '' }]
                 }))
               }
-            />
+              style={{ width: '100%', padding: 10, borderRadius: 10, marginBottom: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, fontSize: 13 }}
+            >
+              <Plus size={16} />
+              Add round
+            </button>
+
             <div style={{ display: 'flex', gap: 10, marginTop: 8 }}>
               <label style={{ flex: 1, fontSize: 12, color: c.muted }}>
                 Format
@@ -239,6 +302,17 @@ export function TripBuilderFlow() {
                 </select>
               </label>
             </div>
+            <label style={{ display: 'block', fontSize: 12, color: c.muted, marginTop: 8 }}>
+              Skins stake per hole
+              <input
+                type="number"
+                min={0}
+                value={form.skinsStake}
+                disabled={!form.skinsOn}
+                onChange={e => setForm(f => ({ ...f, skinsStake: Number(e.target.value) }))}
+                style={{ ...inputStyle, marginTop: 6 }}
+              />
+            </label>
             <button className="dt-btn dt-btn-gold dt-glow" onClick={finish} disabled={!form.name.trim()} style={btnStyle}>
               Launch trip
               <ChevronRight size={18} style={{ marginLeft: 6, verticalAlign: 'middle' }} />
@@ -307,6 +381,7 @@ export function TripBuilderModal({ onClose, onCreated }: { onClose: () => void; 
       gameFormat: form.format,
       stake: form.stake,
       skins: form.skinsOn,
+      skinsStake: form.skinsStake,
       rounds: form.rounds.map(r => ({ course: r.courseName, name: r.name }))
     })
     upsertTrip(trip)
@@ -320,6 +395,20 @@ export function TripBuilderModal({ onClose, onCreated }: { onClose: () => void; 
         <SheetHeader title="Quick trip" onClose={onClose} />
         <Field label="Trip name" value={form.name} onChange={v => setForm(f => ({ ...f, name: v }))} />
         <Field label="Location" value={form.location} onChange={v => setForm(f => ({ ...f, location: v }))} />
+        <label style={{ display: 'block', fontSize: 12, color: c.muted, marginBottom: 12 }}>
+          Course
+          <div style={{ marginTop: 6 }}>
+            <CoursePicker
+              value={form.rounds[0]?.courseName || ''}
+              onChange={v =>
+                setForm(f => ({
+                  ...f,
+                  rounds: [{ ...f.rounds[0], courseName: v, name: f.rounds[0]?.name || 'Round 1' }]
+                }))
+              }
+            />
+          </div>
+        </label>
         <button className="dt-btn dt-btn-gold" onClick={finish} disabled={!form.name.trim()} style={{ width: '100%', padding: 14, borderRadius: 12, marginTop: 8 }}>
           Create
         </button>

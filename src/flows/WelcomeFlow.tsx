@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom'
 import { Flag, Sparkles, Users } from 'lucide-react'
 import { useTripStore } from '@/context/TripContext'
+import { AuthPanel } from '@/components/AuthPanel'
 import { c } from '@/styles'
 
 export function WelcomeFlow() {
@@ -45,6 +46,8 @@ export function WelcomeFlow() {
             <li>Settle up with Venmo-ready ledger math</li>
           </ul>
         </div>
+
+        <AuthPanel />
 
         <button
           className="dt-btn dt-btn-gold dt-glow"

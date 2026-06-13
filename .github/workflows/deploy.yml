@@ -6,12 +6,7 @@
 #   VPS_SSH_PRIVATE_KEY   — private key for that user (ed25519 recommended)
 #   VPS_DEPLOY_PATH       — absolute path to this repo on the server (e.g. /home/don/daly-trip)
 #
-# One-time VPS setup:
-#   1. Clone this repo to VPS_DEPLOY_PATH
-#   2. cp .env.vps.example .env and fill Supabase vars
-#   3. chmod +x scripts/vps-deploy.sh
-#   4. Ensure docker + docker compose are installed
-#   5. Add the GitHub Actions public key to ~/.ssh/authorized_keys
+# One-time VPS setup: see DEPLOY.md
 
 name: Deploy VPS
 
@@ -25,10 +20,23 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: if [ -f package-lock.json ]; then npm ci; else npm install; fi
+      - run: npm test
+      - run: npm run build
+
   deploy:
+    needs: build
     runs-on: ubuntu-latest
     timeout-minutes: 20
-
     steps:
       - name: Deploy over SSH
         uses: appleboy/ssh-action@v1.2.0

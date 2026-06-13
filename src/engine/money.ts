@@ -1,5 +1,6 @@
 import type { Trip } from '@/types/trip'
-import { computeSkins } from '@/engine/scoring'
+import { computeSkinsForRound } from '@/engine/scoring'
+import { applySkinsBalances, allRoundContexts } from '@/engine/roundMoney'
 
 export interface SettlementLine {
   from: string
@@ -12,19 +13,19 @@ export function TRIP_PRICE(): number {
   return 5
 }
 
-export function computeSettlements(trip: Trip): SettlementLine[] {
+function initBalances(trip: Trip): Record<string, number> {
   const balances: Record<string, number> = {}
   trip.players.forEach(p => {
     balances[p.id] = 0
   })
-  const skins = computeSkins(trip)
-  Object.entries(skins.winners).forEach(([, winnerId]) => {
-    if (!winnerId) return
-    const stake = trip.games.find(g => g.type === 'skins')?.stake || 5
-    trip.players.forEach(p => {
-      if (p.id === winnerId) balances[p.id] += stake * (trip.players.length - 1)
-      else balances[p.id] -= stake
-    })
+  return balances
+}
+
+export function computeSettlements(trip: Trip): SettlementLine[] {
+  const balances = initBalances(trip)
+  allRoundContexts(trip).forEach(ctx => {
+    const skins = computeSkinsForRound(trip.players, ctx.course, ctx.games, ctx.scores)
+    applySkinsBalances(balances, trip.players, ctx.games, skins)
   })
   trip.bets.forEach(b => {
     if (b.settled) return
@@ -59,18 +60,17 @@ export function computeSettlements(trip: Trip): SettlementLine[] {
 }
 
 export function totalTripMoney(trip: Trip): Record<string, number> {
-  const totals: Record<string, number> = {}
-  trip.players.forEach(p => {
-    totals[p.id] = 0
-  })
-  const skins = computeSkins(trip)
-  Object.values(skins.winners).forEach(winnerId => {
-    if (!winnerId) return
-    const stake = trip.games.find(g => g.type === 'skins')?.stake || 5
-    trip.players.forEach(p => {
-      if (p.id === winnerId) totals[p.id] += stake * (trip.players.length - 1)
-      else totals[p.id] -= stake
-    })
+  const totals = initBalances(trip)
+  allRoundContexts(trip).forEach(ctx => {
+    const skins = computeSkinsForRound(trip.players, ctx.course, ctx.games, ctx.scores)
+    applySkinsBalances(totals, trip.players, ctx.games, skins)
   })
   return totals
+}
+
+export function tripSkinsPot(trip: Trip): number {
+  return allRoundContexts(trip).reduce((sum, ctx) => {
+    const skins = computeSkinsForRound(trip.players, ctx.course, ctx.games, ctx.scores)
+    return sum + skins.pot
+  }, 0)
 }

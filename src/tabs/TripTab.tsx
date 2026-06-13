@@ -3,9 +3,18 @@ import { buildLeaderboard } from '@/engine/scoring'
 import type { Trip } from '@/types/trip'
 import { c, formatScore } from '@/styles'
 import { ScoreChip } from '@/components/TabBar'
-import { MapPin, Trophy } from 'lucide-react'
+import { ShareQr } from '@/components/ShareQr'
+import { MapPin, Play, Trophy } from 'lucide-react'
 
-export function TripTab({ trip, onRoundChange }: { trip: Trip; onRoundChange: (index: number) => void }) {
+export function TripTab({
+  trip,
+  onRoundChange,
+  onShowMovie
+}: {
+  trip: Trip
+  onRoundChange: (index: number) => void
+  onShowMovie?: () => void
+}) {
   const leaders = buildLeaderboard(trip)
   const top = [...leaders].sort((a, b) => a.toParNet - b.toParNet).find(l => l.thru > 0)
   const drop = starterDailyDrop(trip, leaders)
@@ -43,6 +52,19 @@ export function TripTab({ trip, onRoundChange }: { trip: Trip; onRoundChange: (i
           </div>
         </div>
       </div>
+
+      <ShareQr code={trip.code} tripName={trip.name} />
+
+      {onShowMovie ? (
+        <button
+          className="dt-btn dt-btn-ghost"
+          onClick={onShowMovie}
+          style={{ width: '100%', marginTop: 12, marginBottom: 14, padding: 12, borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
+        >
+          <Play size={16} color={c.gold} />
+          Trip Movie
+        </button>
+      ) : null}
 
       <div className="dt-cond" style={{ fontSize: 10, letterSpacing: '.12em', color: c.muted, textTransform: 'uppercase', marginBottom: 8 }}>
         Rounds

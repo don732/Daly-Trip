@@ -20,6 +20,9 @@ export function PlayTab({ trip, onScore }: { trip: Trip; onScore: (playerId: str
 
   return (
     <div className="dt-fade-in" style={{ padding: '16px 16px 100px' }}>
+      <div className="dt-cond" style={{ fontSize: 10, letterSpacing: '.12em', color: c.gold, textTransform: 'uppercase', marginBottom: 10, textAlign: 'center' }}>
+        {trip.rounds[trip.activeRoundIndex]?.name || 'Round'} · {trip.course.name}
+      </div>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
         <button className="dt-btn dt-step" onClick={() => setHole(h => Math.max(0, h - 1))} style={navBtn}>
           <ChevronLeft size={20} />
