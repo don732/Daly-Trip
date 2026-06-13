@@ -1,0 +1,44 @@
+# Deploy dalytrips.com frontend to the VPS on every push to main.
+#
+# Required GitHub repository secrets:
+#   VPS_HOST              — public IP or hostname (e.g. dalytrips.com or VPS IP)
+#   VPS_USER              — SSH user (e.g. don)
+#   VPS_SSH_PRIVATE_KEY   — private key for that user (ed25519 recommended)
+#   VPS_DEPLOY_PATH       — absolute path to this repo on the server (e.g. /home/don/daly-trip)
+#
+# One-time VPS setup:
+#   1. Clone this repo to VPS_DEPLOY_PATH
+#   2. cp .env.vps.example .env and fill Supabase vars
+#   3. chmod +x scripts/vps-deploy.sh
+#   4. Ensure docker + docker compose are installed
+#   5. Add the GitHub Actions public key to ~/.ssh/authorized_keys
+
+name: Deploy VPS
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-vps
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Deploy over SSH
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_PRIVATE_KEY }}
+          script_stop: true
+          command_timeout: 15m
+          script: |
+            set -euo pipefail
+            cd "${{ secrets.VPS_DEPLOY_PATH }}"
+            bash scripts/vps-deploy.sh

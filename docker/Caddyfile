@@ -1,0 +1,4 @@
+dalytrips.com, www.dalytrips.com {
+    encode gzip
+    reverse_proxy web:80
+}
