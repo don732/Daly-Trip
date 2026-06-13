@@ -1,0 +1,35 @@
+# Build output
+dist/
+build/
+*.log
+
+# Environment
+.env
+.env.local
+.env.*.local
+.env.deploy
+
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Supabase
+.supabase/
+supabase/.temp/
+supabase/.branches/
+
+# IDE
+.vscode/*
+!.vscode/extensions.json
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Generated
+coverage/
+.nyc_output/
