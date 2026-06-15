@@ -36,7 +36,7 @@ export function createTestTrip(opts?: { playerCount?: number; fillScores?: boole
 export function withUniqueSkinWinner(trip: Trip): Trip {
   const scores = Object.fromEntries(
     trip.players.map((p, i) => {
-      const row = Array(18).fill(5)
+      const row = Array<number | null>(18).fill(null)
       row[0] = i === 0 ? 3 : 7
       return [p.id, row]
     })
@@ -44,7 +44,7 @@ export function withUniqueSkinWinner(trip: Trip): Trip {
   const rounds = trip.rounds.map((r, i) =>
     i === 0
       ? { ...r, scores }
-      : { ...r, scores: Object.fromEntries(trip.players.map(p => [p.id, Array(18).fill(null)])) }
+      : { ...r, scores: Object.fromEntries(trip.players.map(p => [p.id, Array<number | null>(18).fill(null)])) }
   )
   return { ...trip, scores, rounds }
 }
