@@ -20,7 +20,7 @@ export function DalyLogo({
         borderRadius: 12,
         position: 'relative',
         overflow: 'hidden',
-        background: `linear-gradient(145deg, ${color || c.felt}, #0A241A)`,
+        background: `linear-gradient(145deg, ${color || c.felt}, ${c.green900})`,
         border: `1.5px solid ${c.gold}`,
         display: 'flex',
         alignItems: 'center',
@@ -33,7 +33,7 @@ export function DalyLogo({
       ) : emoji ? (
         <span style={{ fontSize: size * 0.5 }}>{emoji}</span>
       ) : (
-        <Flag size={size * 0.5} color={c.goldBright} strokeWidth={2.2} />
+        <Flag size={size * 0.5} color={c.gold} strokeWidth={2.2} />
       )}
     </div>
   )

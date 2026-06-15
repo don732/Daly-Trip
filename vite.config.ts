@@ -8,22 +8,45 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.svg'],
+      includeAssets: ['favicon.svg', 'icons/icon.svg', 'icons/maskable-icon.svg', 'apple-touch-icon.svg'],
       manifest: {
         name: 'Daly Trips',
         short_name: 'Daly Trips',
-        description: 'The operating system for golf trips with the boys.',
-        theme_color: '#06170F',
-        background_color: '#06170F',
+        description: 'The operating system for golf trips — live scoring, skins, leaderboards, and settlement.',
+        theme_color: '#F5F2EA',
+        background_color: '#F5F3EE',
         display: 'standalone',
         orientation: 'portrait',
         start_url: '/',
+        scope: '/',
+        categories: ['sports', 'entertainment'],
         icons: [
-          { src: '/favicon.svg', sizes: '512x512', type: 'image/svg+xml', purpose: 'any maskable' }
+          {
+            src: '/icons/icon.svg',
+            sizes: '512x512',
+            type: 'image/svg+xml',
+            purpose: 'any'
+          },
+          {
+            src: '/icons/maskable-icon.svg',
+            sizes: '512x512',
+            type: 'image/svg+xml',
+            purpose: 'maskable'
+          },
+          {
+            src: '/icons/icon.svg',
+            sizes: '192x192',
+            type: 'image/svg+xml',
+            purpose: 'any'
+          }
         ]
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,ico,svg,woff2}']
+        globPatterns: ['**/*.{js,css,html,ico,svg,woff2}'],
+        navigateFallback: '/index.html'
+      },
+      devOptions: {
+        enabled: true
       }
     })
   ],

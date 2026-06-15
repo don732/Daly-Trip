@@ -1,6 +1,7 @@
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { TripProvider } from '@/context/TripContext'
 import { StyleInjector } from '@/components/StyleInjector'
+import { InstallPrompt } from '@/components/InstallPrompt'
 import { WelcomeFlow } from '@/flows/WelcomeFlow'
 import { JoinFlow } from '@/flows/JoinFlow'
 import { TripBuilderFlow } from '@/flows/TripBuilderFlow'
@@ -10,6 +11,7 @@ export function App() {
   return (
     <TripProvider>
       <StyleInjector />
+      <InstallPrompt />
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<WelcomeFlow />} />

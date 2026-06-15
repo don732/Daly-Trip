@@ -87,7 +87,7 @@ export function WelcomeFlow() {
                   height: 28,
                   borderRadius: 999,
                   background: c.gold,
-                  border: `2px solid ${c.cardWarm}`,
+                  border: `2px solid ${c.creamSoft}`,
                   color: c.ink,
                   display: 'flex',
                   alignItems: 'center',

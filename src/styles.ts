@@ -3,6 +3,9 @@ import type { CSSProperties } from 'react'
 export const c = {
   bg: '#F5F2EA',
   pageOuter: '#F5F3EE',
+  green900: '#FFFFFF',
+  green850: '#EDE8D8',
+  green800: '#DDD5BC',
   card: '#FFFFFF',
   cardDeep: '#F5F2EA',
   cardWarm: '#FFFDF6',
@@ -29,6 +32,9 @@ export const c = {
 } as const
 
 export const STYLES = `
+@import url('https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&display=swap');
+* { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+
 .dt-root { font-family:'Archivo',sans-serif; color:${c.cream}; background:${c.bg}; min-height:100vh; }
 .dt-display { font-family:'Archivo',sans-serif; font-weight:800; }
 .dt-cond { font-family:'Archivo',sans-serif; letter-spacing:.04em; }
@@ -43,12 +49,12 @@ export const STYLES = `
   box-shadow:0 1px 6px rgba(13,31,60,.06);
 }
 .dt-card-gold {
-  background:${c.cardWarm};
+  background:#FFFDF6;
   border:1.5px solid ${c.goldBright};
   box-shadow:0 2px 12px rgba(184,144,58,.12);
 }
 .dt-press:active { transform:scale(.97); }
-.dt-btn { font-family:'Archivo',sans-serif; border:none; cursor:pointer; transition:transform .1s,filter .15s; }
+.dt-btn { transition:transform .1s,filter .15s; }
 .dt-btn:active { transform:scale(.94); }
 .dt-btn-gold { background:${c.felt}; border:2px solid ${c.goldBright}; color:${c.ink}; font-weight:700; }
 .dt-btn-ghost { background:#FFFFFF; border:1.5px solid ${c.lineStrong}; color:${c.cream}; }
@@ -83,6 +89,8 @@ export const STYLES = `
 
 .dt-live-dot { animation:dtLive 1.1s ease-in-out infinite; }
 @keyframes dtLive { 0%,100%{opacity:1;transform:scale(1);} 50%{opacity:.3;transform:scale(.75);} }
+.dt-flash { animation:dtFlash 1.8s ease-in-out infinite; }
+@keyframes dtFlash { 0%,100%{box-shadow:0 0 0 0 rgba(184,144,58,0);} 50%{box-shadow:0 0 10px 0 rgba(184,144,58,.4);} }
 
 .dt-chip { display:inline-flex; align-items:center; justify-content:center; min-width:28px; height:28px; border-radius:8px; font-weight:700; font-size:13px; }
 .dt-chip-under { background:rgba(184,32,48,.12); color:#B82030; border:1px solid rgba(184,32,48,.28); }

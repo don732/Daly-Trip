@@ -67,11 +67,12 @@ export function LiveTicker({ trip, onClick }: { trip: Trip; onClick?: () => void
             key={i}
             className="dt-cond"
             style={{
-              fontSize: 11,
+              fontSize: 11.5,
               fontWeight: 600,
-              letterSpacing: '.06em',
-              color: c.cardWarm,
-              padding: '0 20px',
+              letterSpacing: '.12em',
+              color: c.goldBright,
+              padding: '0 16px',
+              borderLeft: '1px solid rgba(201,162,75,.25)',
               lineHeight: '36px'
             }}
           >

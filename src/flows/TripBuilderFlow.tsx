@@ -224,14 +224,14 @@ export function TripBuilderFlow() {
                 height: 56,
                 borderRadius: 16,
                 background: c.gold,
-                border: `2px solid ${c.cardWarm}`,
+                border: `2px solid ${c.creamSoft}`,
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 cursor: 'pointer'
               }}
             >
-              <Plus size={24} color={c.ink} />
+              <Plus size={24} color="#FFFFFF" />
             </button>
           </div>
           <div style={{ display: 'flex', gap: 8, justifyContent: 'center', flexWrap: 'wrap', marginBottom: 4 }}>
@@ -265,8 +265,8 @@ export function TripBuilderFlow() {
                 borderRadius: 14,
                 cursor: 'pointer',
                 background: c.gold,
-                border: `2px solid ${c.cardWarm}`,
-                color: c.creamSoft
+                border: `2px solid ${c.creamSoft}`,
+                color: c.ink
               }}
             >
               <span className="dt-cond" style={{ fontSize: 14.5, fontWeight: 800, letterSpacing: '.04em' }}>
