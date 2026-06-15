@@ -64,7 +64,7 @@ export function StarterChat({ trip, onClose }: { trip: Trip; onClose: () => void
                 maxWidth: '85%',
                 padding: '10px 14px',
                 borderRadius: 14,
-                background: m.role === 'me' ? 'rgba(201,162,75,.16)' : 'rgba(255,255,255,.05)',
+                background: m.role === 'me' ? c.surfaceGold : c.surfaceSubtle,
                 border: `1px solid ${m.role === 'me' ? c.goldDim : c.line}`,
                 fontSize: 14,
                 lineHeight: 1.5,
@@ -87,7 +87,7 @@ export function StarterChat({ trip, onClose }: { trip: Trip; onClose: () => void
               padding: 12,
               borderRadius: 12,
               border: `1px solid ${c.line}`,
-              background: c.card,
+              background: c.cardDeep,
               color: c.cream,
               fontSize: 14
             }}

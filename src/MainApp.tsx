@@ -14,6 +14,8 @@ import { BoardTab } from '@/tabs/BoardTab'
 import { MoneyTab } from '@/tabs/MoneyTab'
 import { FeedTab } from '@/tabs/FeedTab'
 import { HighlightReel } from '@/components/HighlightReel'
+import { LiveTicker } from '@/components/LiveTicker'
+import { DalyLogo } from '@/components/DalyLogo'
 import { SyncStatus } from '@/components/SyncStatus'
 import { DEMO_TRIP_ID } from '@/demo/seedTrip'
 import { BUILD_STAMP, c } from '@/styles'
@@ -80,28 +82,30 @@ export function MainApp() {
   return (
     <div className="dt-root" style={{ minHeight: '100%', background: c.bg }}>
       <div className="dt-shell">
-        <header
-          style={{
-            position: 'sticky',
-            top: 0,
-            zIndex: 40,
-            padding: 'calc(10px + env(safe-area-inset-top)) 16px 10px',
-            background: `linear-gradient(180deg,${c.bg} 70%,transparent)`,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between'
-          }}
-        >
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <div style={{ fontSize: 15, fontWeight: 800, color: c.cream }}>{trip.name}</div>
-              <SyncStatus />
+        <header style={{ position: 'sticky', top: 0, zIndex: 40, background: c.bg }}>
+          <div
+            style={{
+              padding: 'calc(10px + env(safe-area-inset-top)) 16px 10px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between'
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
+              <DalyLogo size={36} />
+              <div style={{ minWidth: 0 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <div style={{ fontSize: 15, fontWeight: 800, color: c.cream, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {trip.name}
+                  </div>
+                  <SyncStatus />
+                </div>
+                <div className="dt-cond" style={{ fontSize: 10, color: c.muted, letterSpacing: '.06em' }}>
+                  {BUILD_STAMP} · {trip.code}
+                </div>
+              </div>
             </div>
-            <div className="dt-cond" style={{ fontSize: 10, color: c.muted, letterSpacing: '.06em' }}>
-              {BUILD_STAMP} · {trip.code}
-            </div>
-          </div>
-          <div style={{ display: 'flex', gap: 8 }}>
+            <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
             <button
               className="dt-btn"
               onClick={() => setStarterOpen(true)}
@@ -137,6 +141,8 @@ export function MainApp() {
               <Menu size={20} />
             </button>
           </div>
+          </div>
+          {tab !== 'trip' ? <LiveTicker trip={trip} onClick={() => setTab('board')} /> : null}
         </header>
 
         {tab === 'trip' ? <TripTab trip={trip} onRoundChange={handleRoundChange} onShowMovie={() => setMovieOpen(true)} /> : null}

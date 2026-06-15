@@ -36,7 +36,7 @@ export function BoardTab({ trip, onPlayerClick }: { trip: Trip; onPlayerClick?: 
               fontSize: 11,
               fontWeight: 700,
               letterSpacing: '.04em',
-              background: view === v ? 'rgba(201,162,75,.18)' : c.card,
+              background: view === v ? c.surfaceGoldStrong : c.card,
               border: view === v ? `1px solid ${c.goldDim}` : `1px solid ${c.line}`,
               color: view === v ? c.gold : c.muted
             }}

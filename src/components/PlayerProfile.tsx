@@ -34,7 +34,7 @@ export function PlayerProfile({ player, trip, onClose }: { player: Player; trip:
           </button>
         </div>
         {row && row.thru > 0 ? (
-          <div style={{ marginTop: 16, padding: 12, borderRadius: 12, background: 'rgba(255,255,255,.04)' }}>
+          <div style={{ marginTop: 16, padding: 12, borderRadius: 12, background: c.surfaceSubtle }}>
             <span style={{ fontSize: 13, color: c.cream }}>
               This round: {formatScore(row.toParNet)} net · {formatScore(row.toPar)} gross thru {row.thru}
             </span>

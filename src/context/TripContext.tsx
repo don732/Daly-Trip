@@ -7,6 +7,43 @@ import { syncRoundFromTrip } from '@/engine/scoring'
 import { switchActiveRound } from '@/engine/tripFactory'
 import { uid } from '@/styles'
 
+export interface JoinProfile {
+  nick?: string
+  hcp?: number
+  venmo?: string
+  claimPlayerId?: string
+}
+
+function applyJoinProfile(trip: Trip, profile?: JoinProfile): Trip {
+  if (!profile) return trip
+  const players = trip.players.map(p => ({ ...p }))
+  if (profile.claimPlayerId) {
+    const i = players.findIndex(p => p.id === profile.claimPlayerId)
+    if (i >= 0) {
+      players[i] = {
+        ...players[i],
+        nick: profile.nick?.trim() || players[i].nick,
+        hcp: profile.hcp ?? players[i].hcp,
+        venmo: profile.venmo?.trim() || players[i].venmo
+      }
+    }
+    return { ...trip, players }
+  }
+  if (profile.nick?.trim()) {
+    const i = players.findIndex(p => /^Player \d+$/i.test(p.nick) || p.nick === 'Organizer')
+    const idx = i >= 0 ? i : 0
+    if (players[idx]) {
+      players[idx] = {
+        ...players[idx],
+        nick: profile.nick.trim(),
+        hcp: profile.hcp ?? players[idx].hcp,
+        venmo: profile.venmo?.trim() || players[idx].venmo
+      }
+    }
+  }
+  return { ...trip, players }
+}
+
 interface TripContextValue {
   state: AppState
   trip: Trip | null
@@ -15,7 +52,7 @@ interface TripContextValue {
   updateTrip: (updater: (trip: Trip) => Trip) => void
   loadDemo: () => Trip
   joinByCode: (code: string) => Trip | null
-  joinByCodeAsync: (code: string) => Promise<Trip | null>
+  joinByCodeAsync: (code: string, profile?: JoinProfile) => Promise<Trip | null>
   addFeedPost: (body: string, authorId: string, authorNick: string) => void
   reactToPost: (postId: string, emoji: string, playerId: string) => void
   addSideBet: (bet: Omit<BetEntry, 'id' | 'ts'>) => void
@@ -106,23 +143,20 @@ export function TripProvider({ children }: { children: ReactNode }) {
     [state]
   )
 
-  const joinByCodeAsync = useCallback(async (code: string): Promise<Trip | null> => {
+  const joinByCodeAsync = useCallback(async (code: string, profile?: JoinProfile): Promise<Trip | null> => {
     const upper = code.trim().toUpperCase()
     if (!upper) return null
-    const cloud = await findTripByCodeCloud(upper)
-    if (cloud) {
-      setState(prev => saveTrip(prev, cloud))
-      return cloud
-    }
-    const local = findTripByCode(state, upper)
-    if (local) {
-      setState(prev => ({ ...prev, activeTripId: local.id }))
-      return local
-    }
-    if (upper === DEMO_TRIP_CODE) {
-      return loadDemo()
-    }
-    return null
+    let found: Trip | null = await findTripByCodeCloud(upper)
+    if (!found) found = findTripByCode(state, upper) ?? null
+    if (!found && upper === DEMO_TRIP_CODE) found = loadDemo()
+    if (!found) return null
+    const merged = applyJoinProfile(found, profile)
+    setState(prev => {
+      const next = saveTrip(prev, merged)
+      return { ...next, activeTripId: merged.id }
+    })
+    schedulePushTripToCloud(merged)
+    return merged
   }, [state, loadDemo])
 
   const addFeedPost = useCallback((body: string, authorId: string, authorNick: string) => {

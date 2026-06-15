@@ -86,7 +86,7 @@ const stepBtn: CSSProperties = {
   width: 32,
   height: 32,
   borderRadius: 8,
-  background: 'rgba(255,255,255,.06)',
+  background: c.surfaceSubtle,
   border: `1px solid ${c.line}`,
   color: c.cream,
   fontWeight: 700

@@ -73,7 +73,7 @@ export function FeedTab({
                     style={{
                       padding: '4px 10px',
                       borderRadius: 99,
-                      background: mine ? 'rgba(201,162,75,.14)' : 'rgba(255,255,255,.04)',
+                      background: mine ? c.surfaceGold : c.surfaceSubtle,
                       border: `1px solid ${c.line}`,
                       color: c.cream,
                       fontSize: 12

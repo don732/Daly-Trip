@@ -22,7 +22,10 @@ export const c = {
   win: '#1A6630',
   pine: '#2A6B4A',
   sand: '#C4A882',
-  black: '#000000'
+  black: '#000000',
+  surfaceSubtle: 'rgba(13,31,60,.06)',
+  surfaceGold: 'rgba(184,144,58,.14)',
+  surfaceGoldStrong: 'rgba(184,144,58,.18)'
 } as const
 
 export const STYLES = `

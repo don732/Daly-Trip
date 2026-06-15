@@ -44,7 +44,7 @@ export function HighlightReel({ trip, onClose }: { trip: Trip; onClose: () => vo
             <span className="dt-num" style={{ color: c.gold }}>{formatScore(row.toParNet)}</span>
           </div>
         ))}
-        <div style={{ marginTop: 16, padding: 12, borderRadius: 12, background: 'rgba(255,255,255,.04)', color: c.muted, fontSize: 13 }}>
+        <div style={{ marginTop: 16, padding: 12, borderRadius: 12, background: c.surfaceSubtle, color: c.muted, fontSize: 13 }}>
           Skins across {trip.rounds.length} round{trip.rounds.length === 1 ? '' : 's'} · ${pot} total pot
         </div>
       </div>

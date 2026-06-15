@@ -81,7 +81,7 @@ export function TripTab({
                 flex: '0 0 auto',
                 padding: '12px 16px',
                 borderRadius: 14,
-                background: active ? 'rgba(201,162,75,.16)' : c.card,
+                background: active ? c.surfaceGold : c.card,
                 border: active ? `1px solid ${c.goldDim}` : `1px solid ${c.line}`,
                 color: active ? c.gold : c.cream,
                 textAlign: 'left',

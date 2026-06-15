@@ -33,7 +33,7 @@ export function MoneyTab({ trip }: { trip: Trip }) {
         </div>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
           {trip.games.map(g => (
-            <span key={g.id} style={{ padding: '6px 10px', borderRadius: 99, background: 'rgba(255,255,255,.05)', border: `1px solid ${c.line}`, fontSize: 12, color: c.cream }}>
+            <span key={g.id} style={{ padding: '6px 10px', borderRadius: 99, background: c.surfaceSubtle, border: `1px solid ${c.line}`, fontSize: 12, color: c.cream }}>
               {g.label} · ${g.stake}
             </span>
           ))}

@@ -148,7 +148,7 @@ export function TripBuilderFlow() {
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
         <div>
           <div className="dt-display" style={{ fontSize: 22, fontWeight: 900, color: c.creamSoft }}>
-            {step < 3 ? 'New Event' : 'You&apos;re in'}
+            {step < 3 ? 'New Event' : "You're in"}
           </div>
           {step < 3 ? (
             <div className="dt-cond" style={{ fontSize: 12, color: c.muted, marginTop: 2 }}>

@@ -157,24 +157,6 @@ export function WelcomeFlow() {
           </span>
         </button>
 
-        <button
-          className="dt-btn"
-          onClick={() => navigate('/join')}
-          style={{
-            width: '100%',
-            marginTop: 10,
-            padding: 10,
-            borderRadius: 10,
-            cursor: 'pointer',
-            background: 'transparent',
-            border: 'none',
-            color: c.muted,
-            fontSize: 12
-          }}
-        >
-          Have a join code?
-        </button>
-
         <div style={{ fontSize: 11, color: c.cream, lineHeight: 1.6, marginTop: 16, textAlign: 'center', opacity: 0.5 }}>
           Tracks friendly wagers only — never places, holds, or processes bets or payments.
         </div>
