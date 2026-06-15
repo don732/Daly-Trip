@@ -10,7 +10,7 @@ describe('TRIP_PRICE', () => {
 
 describe('computeSettlements', () => {
   it('produces settlement lines for skins', () => {
-    const trip = withUniqueSkinWinner(createTestTrip())
+    const trip = withUniqueSkinWinner(createTestTrip({ playerCount: 8 }))
     const lines = computeSettlements(trip)
     expect(lines.length).toBeGreaterThan(0)
     lines.forEach(l => {
