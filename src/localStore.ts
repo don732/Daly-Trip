@@ -2,7 +2,7 @@ import type { AppState, Trip } from '@/types/trip'
 
 export const STORAGE_KEY = 'daly-trips:v1'
 
-const emptyState = (): AppState => ({ trips: {}, activeTripId: null, merit: [] })
+const emptyState = (): AppState => ({ trips: {}, activeTripId: null, merit: [], memberPlayers: {} })
 
 export function loadState(): AppState {
   if (typeof window === 'undefined') {
@@ -15,7 +15,8 @@ export function loadState(): AppState {
     return {
       trips: parsed.trips || {},
       activeTripId: parsed.activeTripId || null,
-      merit: parsed.merit || []
+      merit: parsed.merit || [],
+      memberPlayers: parsed.memberPlayers || {}
     }
   } catch {
     return emptyState()
@@ -37,12 +38,29 @@ export function saveTrip(state: AppState, trip: Trip): AppState {
   return next
 }
 
+export function setMemberPlayer(state: AppState, tripId: string, playerId: string): AppState {
+  const next = {
+    ...state,
+    memberPlayers: { ...state.memberPlayers, [tripId]: playerId }
+  }
+  saveState(next)
+  return next
+}
+
+export function getMemberPlayer(state: AppState, tripId: string | null): string | null {
+  if (!tripId) return null
+  return state.memberPlayers[tripId] || null
+}
+
 export function deleteTrip(state: AppState, tripId: string): AppState {
   const trips = { ...state.trips }
   delete trips[tripId]
+  const memberPlayers = { ...state.memberPlayers }
+  delete memberPlayers[tripId]
   const next = {
     ...state,
     trips,
+    memberPlayers,
     activeTripId: state.activeTripId === tripId ? null : state.activeTripId
   }
   saveState(next)

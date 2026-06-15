@@ -1,8 +1,14 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import type { AppState, BetEntry, Trip } from '@/types/trip'
-import { findTripByCode, getTrip, loadState, saveState, saveTrip } from '@/localStore'
-import { findTripByCodeCloud, pullTripFromCloud, schedulePushTripToCloud, subscribeTrip } from '@/cloudStore'
+import { findTripByCode, getMemberPlayer, getTrip, loadState, saveState, saveTrip, setMemberPlayer } from '@/localStore'
+import {
+  joinTripByCodeCloud,
+  pullTripFromCloud,
+  schedulePushTripToCloud,
+  subscribeTrip
+} from '@/cloudStore'
 import { applyJoinProfile, type JoinProfile } from '@/engine/joinProfile'
+import { getSession } from '@/lib/auth'
 import { syncRoundFromTrip } from '@/engine/scoring'
 import { switchActiveRound } from '@/engine/tripFactory'
 import { uid } from '@/styles'
@@ -17,12 +23,24 @@ interface TripContextValue {
   updateTrip: (updater: (trip: Trip) => Trip) => void
   joinByCode: (code: string) => Trip | null
   joinByCodeAsync: (code: string, profile?: JoinProfile) => Promise<Trip | null>
+  getMyPlayerId: (tripId: string | null) => string | null
+  setMyPlayerId: (tripId: string, playerId: string) => void
   addFeedPost: (body: string, authorId: string, authorNick: string) => void
   reactToPost: (postId: string, emoji: string, playerId: string) => void
   addSideBet: (bet: Omit<BetEntry, 'id' | 'ts'>) => void
 }
 
 const TripContext = createContext<TripContextValue | null>(null)
+
+function resolvePlayerId(trip: Trip, profile?: JoinProfile): string | null {
+  if (profile?.claimPlayerId) return profile.claimPlayerId
+  const nick = profile?.nick?.trim()
+  if (nick) {
+    const match = trip.players.find(p => p.nick === nick)
+    if (match) return match.id
+  }
+  return trip.players[0]?.id ?? null
+}
 
 export function TripProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<AppState>(() => loadState())
@@ -64,6 +82,12 @@ export function TripProvider({ children }: { children: ReactNode }) {
     setState(prev => ({ ...prev, activeTripId: tripId }))
   }, [])
 
+  const setMyPlayerId = useCallback((tripId: string, playerId: string) => {
+    setState(prev => setMemberPlayer(prev, tripId, playerId))
+  }, [])
+
+  const getMyPlayerId = useCallback((tripId: string | null) => getMemberPlayer(state, tripId), [state])
+
   const upsertTrip = useCallback((nextTrip: Trip) => {
     setState(prev => saveTrip(prev, nextTrip))
     schedulePushTripToCloud(nextTrip)
@@ -94,12 +118,28 @@ export function TripProvider({ children }: { children: ReactNode }) {
   const joinByCodeAsync = useCallback(async (code: string, profile?: JoinProfile): Promise<Trip | null> => {
     const upper = code.trim().toUpperCase()
     if (!upper) return null
-    let found: Trip | null = await findTripByCodeCloud(upper)
-    if (!found) found = findTripByCode(state, upper) ?? null
+
+    const session = await getSession()
+    if (session?.user?.id) {
+      const cloudTrip = await joinTripByCodeCloud(upper, profile)
+      if (cloudTrip) {
+        const playerId = resolvePlayerId(cloudTrip, profile)
+        setState(prev => {
+          let next = saveTrip(prev, cloudTrip)
+          if (playerId) next = setMemberPlayer(next, cloudTrip.id, playerId)
+          return { ...next, activeTripId: cloudTrip.id }
+        })
+        return cloudTrip
+      }
+    }
+
+    let found: Trip | null = findTripByCode(state, upper) ?? null
     if (!found) return null
     const merged = applyJoinProfile(found, profile)
+    const playerId = resolvePlayerId(merged, profile)
     setState(prev => {
-      const next = saveTrip(prev, merged)
+      let next = saveTrip(prev, merged)
+      if (playerId) next = setMemberPlayer(next, merged.id, playerId)
       return { ...next, activeTripId: merged.id }
     })
     schedulePushTripToCloud(merged)
@@ -144,11 +184,13 @@ export function TripProvider({ children }: { children: ReactNode }) {
       updateTrip,
       joinByCode,
       joinByCodeAsync,
+      getMyPlayerId,
+      setMyPlayerId,
       addFeedPost,
       reactToPost,
       addSideBet
     }),
-    [state, trip, setActiveTrip, upsertTrip, updateTrip, joinByCode, joinByCodeAsync, addFeedPost, reactToPost, addSideBet]
+    [state, trip, setActiveTrip, upsertTrip, updateTrip, joinByCode, joinByCodeAsync, getMyPlayerId, setMyPlayerId, addFeedPost, reactToPost, addSideBet]
   )
 
   return <TripContext.Provider value={value}>{children}</TripContext.Provider>

@@ -130,6 +130,28 @@ export function WelcomeFlow() {
           </span>
         </button>
 
+        <button
+          className="dt-btn dt-press"
+          onClick={() => navigate('/join')}
+          style={{
+            width: '100%',
+            marginTop: 10,
+            padding: 16,
+            borderRadius: 13,
+            cursor: 'pointer',
+            background: c.card,
+            border: `2px solid ${c.gold}`,
+            color: c.felt,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
+          }}
+        >
+          <span className="dt-cond" style={{ fontSize: 14, fontWeight: 700, letterSpacing: '.06em' }}>
+            JOIN WITH CODE
+          </span>
+        </button>
+
         <div style={{ fontSize: 11, color: c.cream, lineHeight: 1.6, marginTop: 16, textAlign: 'center', opacity: 0.5 }}>
           Tracks friendly wagers only — never places, holds, or processes bets or payments.
         </div>

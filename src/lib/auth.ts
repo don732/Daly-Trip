@@ -33,3 +33,20 @@ export function onAuthStateChange(handler: (userId: string | null) => void) {
   })
   return () => data.subscription.unsubscribe()
 }
+
+export async function ensureProfile(userId: string, phone?: string | null) {
+  const sb = getSupabase()
+  if (!sb) return
+  await sb.from('profiles').upsert({
+    id: userId,
+    display_name: phone || null
+  })
+}
+
+export function formatPhoneLabel(phone: string | null | undefined): string {
+  if (!phone) return 'Signed in'
+  if (phone.length <= 4) return phone
+  const tail = phone.slice(-4)
+  const hidden = phone.slice(0, -4).replace(/\d/g, '•')
+  return `${hidden}${tail}`
+}

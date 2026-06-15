@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { Menu, MessageSquare, Trophy, X } from 'lucide-react'
+import { useAuth } from '@/context/AuthContext'
 import { useTripStore, switchActiveRound } from '@/context/TripContext'
 import { getTrip } from '@/localStore'
 import { pullTripFromCloud } from '@/cloudStore'
+import { formatPhoneLabel } from '@/lib/auth'
 import { TabBar } from '@/components/TabBar'
 import { ClubhousePanel } from '@/components/ClubhousePanel'
 import { StarterChat } from '@/components/StarterChat'
@@ -31,7 +33,8 @@ const TABS = [
 export function MainApp() {
   const { tripId } = useParams()
   const navigate = useNavigate()
-  const { state, trip, updateTrip, setActiveTrip, upsertTrip, addFeedPost, reactToPost } = useTripStore()
+  const { state, trip, updateTrip, setActiveTrip, upsertTrip, addFeedPost, reactToPost, getMyPlayerId } = useTripStore()
+  const { phone, signOut, configured: authConfigured } = useAuth()
   const [tab, setTab] = useState('trip')
   const [menuOpen, setMenuOpen] = useState(false)
   const [clubhouseOpen, setClubhouseOpen] = useState(false)
@@ -77,6 +80,9 @@ export function MainApp() {
   }
 
   const tripList = Object.values(state.trips)
+  const myPlayer = trip.players.find(p => p.id === getMyPlayerId(trip.id)) || trip.players[0]
+  const myPlayerId = myPlayer?.id || 'me'
+  const myPlayerNick = myPlayer?.nick || 'Player'
 
   return (
     <div className="dt-root" style={{ minHeight: '100%', background: c.bg }}>
@@ -151,8 +157,8 @@ export function MainApp() {
         {tab === 'feed' ? (
           <FeedTab
             trip={trip}
-            onPost={body => addFeedPost(body, trip.players[0]?.id || 'me', trip.players[0]?.nick || 'Organizer')}
-            onReact={(postId, emoji) => reactToPost(postId, emoji, trip.players[0]?.id || 'me')}
+            onPost={body => addFeedPost(body, myPlayerId, myPlayerNick)}
+            onReact={(postId, emoji) => reactToPost(postId, emoji, myPlayerId)}
           />
         ) : null}
 
@@ -187,6 +193,11 @@ export function MainApp() {
                   <X size={20} />
                 </button>
               </div>
+              {authConfigured ? (
+                <div className="dt-card" style={{ padding: 12, marginBottom: 12, fontSize: 12, color: c.muted }}>
+                  Signed in · {formatPhoneLabel(phone)}
+                </div>
+              ) : null}
               {tripList.map(t => (
                 <button
                   key={t.id}
@@ -253,6 +264,19 @@ export function MainApp() {
               >
                 Back to welcome
               </button>
+              {authConfigured ? (
+                <button
+                  className="dt-btn"
+                  onClick={async () => {
+                    setMenuOpen(false)
+                    await signOut()
+                    navigate('/')
+                  }}
+                  style={{ width: '100%', padding: 14, borderRadius: 12, marginTop: 8, background: 'transparent', color: c.red, border: `1px solid ${c.line}` }}
+                >
+                  Sign out
+                </button>
+              ) : null}
             </div>
           </div>
         ) : null}

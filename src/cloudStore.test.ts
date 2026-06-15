@@ -3,6 +3,7 @@ import { createTestTrip } from '@/test/fixtures'
 
 const mockUpsert = vi.fn()
 const mockMaybeSingle = vi.fn()
+const mockRpc = vi.fn()
 const mockEq = vi.fn(() => ({ maybeSingle: mockMaybeSingle }))
 const mockSelect = vi.fn(() => ({ eq: mockEq }))
 const mockFrom = vi.fn(() => ({
@@ -10,9 +11,14 @@ const mockFrom = vi.fn(() => ({
   select: mockSelect
 }))
 
+vi.mock('@/lib/auth', () => ({
+  getSession: vi.fn().mockResolvedValue({ user: { id: 'user-abc-123' } })
+}))
+
 vi.mock('@supabase/supabase-js', () => ({
   createClient: vi.fn(() => ({
     from: mockFrom,
+    rpc: mockRpc,
     channel: vi.fn(() => ({
       on: vi.fn().mockReturnThis(),
       subscribe: vi.fn()
@@ -30,6 +36,7 @@ describe('cloudStore', () => {
     vi.resetModules()
     mockUpsert.mockReset()
     mockMaybeSingle.mockReset()
+    mockRpc.mockReset()
     mockEq.mockClear()
     mockSelect.mockClear()
     mockFrom.mockClear()
@@ -50,34 +57,56 @@ describe('cloudStore', () => {
     expect(getSyncState().state).toBe('offline')
   })
 
-  it('pushTripToCloud upserts expected columns and document', async () => {
+  it('pushTripToCloud upserts organizer_id when session exists', async () => {
     const trip = createTestTrip()
     const { pushTripToCloud } = await loadCloudStore()
     await pushTripToCloud(trip)
-    expect(mockFrom).toHaveBeenCalledWith('trips')
     expect(mockUpsert).toHaveBeenCalledWith(
       expect.objectContaining({
         id: trip.id,
-        code: trip.code,
-        name: trip.name,
-        location: trip.location,
-        start_date: trip.start,
-        end_date: trip.end,
-        paid: trip.paid,
-        seed: trip.seed,
-        price: trip.price,
+        organizer_id: 'user-abc-123',
         document: trip
       })
     )
   })
 
-  it('findTripByCodeCloud returns parsed trip document', async () => {
+  it('previewTripByCodeCloud calls preview RPC', async () => {
+    const preview = { id: 't1', code: 'ABC123', name: 'Test', location: 'X', players: [] }
+    mockRpc.mockResolvedValue({ data: preview, error: null })
+    const { previewTripByCodeCloud } = await loadCloudStore()
+    const found = await previewTripByCodeCloud('abc123')
+    expect(mockRpc).toHaveBeenCalledWith('preview_trip_by_code', { p_code: 'ABC123' })
+    expect(found).toEqual(preview)
+  })
+
+  it('joinTripByCodeCloud calls join RPC with profile', async () => {
     const trip = createTestTrip()
-    mockMaybeSingle.mockResolvedValue({ data: { document: trip }, error: null })
-    const { findTripByCodeCloud } = await loadCloudStore()
-    const found = await findTripByCodeCloud(trip.code.toLowerCase())
-    expect(mockEq).toHaveBeenCalledWith('code', trip.code.toUpperCase())
-    expect(found).toEqual(trip)
+    mockRpc.mockResolvedValue({ data: trip, error: null })
+    const { joinTripByCodeCloud } = await loadCloudStore()
+    const joined = await joinTripByCodeCloud('ABC123', {
+      claimPlayerId: trip.players[0].id,
+      nick: 'Ace',
+      hcp: 10,
+      venmo: '@ace'
+    })
+    expect(mockRpc).toHaveBeenCalledWith('join_trip_by_code', {
+      p_code: 'ABC123',
+      p_player_id: trip.players[0].id,
+      p_nick: 'Ace',
+      p_hcp: 10,
+      p_venmo: '@ace'
+    })
+    expect(joined).toEqual(trip)
+  })
+
+  it('registerTripOrganizer calls register RPC', async () => {
+    mockRpc.mockResolvedValue({ data: null, error: null })
+    const { registerTripOrganizer } = await loadCloudStore()
+    await registerTripOrganizer('trip-1', 'player-1')
+    expect(mockRpc).toHaveBeenCalledWith('register_trip_organizer', {
+      p_trip_id: 'trip-1',
+      p_player_id: 'player-1'
+    })
   })
 
   it('transitions sync state from syncing to live on successful push', async () => {

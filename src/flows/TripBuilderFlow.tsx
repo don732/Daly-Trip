@@ -1,8 +1,10 @@
 import { useMemo, useState, type ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Minus, Plus, X } from 'lucide-react'
+import { AuthGate } from '@/components/AuthGate'
 import { useTripStore } from '@/context/TripContext'
 import { makeTripFromForm } from '@/engine/tripFactory'
+import { registerTripOrganizer } from '@/cloudStore'
 import { getSession } from '@/lib/auth'
 import { recordTripPayment, startCheckout, TRIP_PRICE } from '@/lib/checkout'
 import type { TeamKey, Trip, TripBuilderForm } from '@/types/trip'
@@ -68,7 +70,7 @@ function shellCard(children: ReactNode) {
 
 export function TripBuilderFlow() {
   const navigate = useNavigate()
-  const { upsertTrip } = useTripStore()
+  const { upsertTrip, setMyPlayerId } = useTripStore()
   const [step, setStep] = useState(0)
   const [form, setForm] = useState<TripBuilderForm>(defaultForm)
   const [paying, setPaying] = useState(false)
@@ -108,6 +110,8 @@ export function TripBuilderFlow() {
       rounds: [{ course: form.location || form.name || 'Round 1', name: 'Round 1' }]
     })
     upsertTrip(trip)
+    await registerTripOrganizer(trip.id, trip.players[0].id)
+    setMyPlayerId(trip.id, trip.players[0].id)
     if (paid) {
       const session = await getSession()
       await recordTripPayment({
@@ -140,8 +144,10 @@ export function TripBuilderFlow() {
     setStarterLine(INVITE_LINES[Math.floor(Math.random() * INVITE_LINES.length)])
   }
 
-  return shellCard(
-    <>
+  return (
+    <AuthGate title="Organizer sign-in" subtitle="Sign in with your phone before creating a trip. Your account becomes the organizer.">
+      {shellCard(
+        <>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
         <div>
           <div className="dt-display" style={{ fontSize: 22, fontWeight: 900, color: c.creamSoft }}>
@@ -551,6 +557,8 @@ export function TripBuilderFlow() {
           </button>
         </div>
       ) : null}
-    </>
+        </>
+      )}
+    </AuthGate>
   )
 }

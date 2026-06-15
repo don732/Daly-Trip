@@ -1,5 +1,7 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
-import type { Trip } from '@/types/trip'
+import type { JoinProfile } from '@/engine/joinProfile'
+import { getSession } from '@/lib/auth'
+import type { Trip, TripPreview } from '@/types/trip'
 import { debounce } from '@/lib/debounce'
 
 let client: SupabaseClient | null = null
@@ -64,6 +66,7 @@ export async function pushTripToCloud(trip: Trip): Promise<void> {
     return
   }
   setSyncState('syncing', null)
+  const session = await getSession()
   const { error } = await sb.from('trips').upsert({
     id: trip.id,
     code: trip.code,
@@ -74,6 +77,7 @@ export async function pushTripToCloud(trip: Trip): Promise<void> {
     paid: trip.paid,
     seed: trip.seed,
     price: trip.price,
+    organizer_id: session?.user?.id ?? null,
     active_round_id: activeRoundId(trip),
     document: trip,
     updated_at: new Date().toISOString()
@@ -83,6 +87,18 @@ export async function pushTripToCloud(trip: Trip): Promise<void> {
     throw error
   }
   setSyncState('live', null)
+}
+
+export async function registerTripOrganizer(tripId: string, playerId: string): Promise<void> {
+  const sb = getSupabase()
+  if (!sb) return
+  const session = await getSession()
+  if (!session?.user?.id) return
+  const { error } = await sb.rpc('register_trip_organizer', {
+    p_trip_id: tripId,
+    p_player_id: playerId
+  })
+  if (error) setSyncState('error', error.message)
 }
 
 const debouncedPush = debounce((trip: Trip) => {
@@ -105,16 +121,42 @@ export async function pullTripFromCloud(tripId: string): Promise<Trip | null> {
   return data.document as Trip
 }
 
-export async function findTripByCodeCloud(code: string): Promise<Trip | null> {
+export async function previewTripByCodeCloud(code: string): Promise<TripPreview | null> {
   const sb = getSupabase()
   if (!sb) return null
-  const { data, error } = await sb.from('trips').select('document').eq('code', code.toUpperCase()).maybeSingle()
+  const { data, error } = await sb.rpc('preview_trip_by_code', { p_code: code.trim().toUpperCase() })
   if (error) {
     setSyncState('error', error.message)
     return null
   }
   if (!data) return null
-  return data.document as Trip
+  return data as TripPreview
+}
+
+export async function joinTripByCodeCloud(code: string, profile?: JoinProfile): Promise<Trip | null> {
+  const sb = getSupabase()
+  if (!sb) return null
+  const session = await getSession()
+  if (!session?.user?.id) return null
+  const { data, error } = await sb.rpc('join_trip_by_code', {
+    p_code: code.trim().toUpperCase(),
+    p_player_id: profile?.claimPlayerId ?? null,
+    p_nick: profile?.nick?.trim() ?? null,
+    p_hcp: profile?.hcp ?? 18,
+    p_venmo: profile?.venmo?.trim() ?? null
+  })
+  if (error) {
+    setSyncState('error', error.message)
+    return null
+  }
+  if (!data) return null
+  return data as Trip
+}
+
+export async function findTripByCodeCloud(code: string): Promise<Trip | null> {
+  const preview = await previewTripByCodeCloud(code)
+  if (!preview) return null
+  return pullTripFromCloud(preview.id)
 }
 
 export function subscribeTrip(tripId: string, onUpdate: (trip: Trip) => void): (() => void) | null {

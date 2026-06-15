@@ -194,6 +194,15 @@ export interface AppState {
   trips: Record<string, Trip>
   activeTripId: string | null
   merit: Array<{ nick: string; points: number; trips: number }>
+  memberPlayers: Record<string, string>
+}
+
+export interface TripPreview {
+  id: string
+  code: string
+  name: string
+  location: string
+  players: Array<{ id: string; nick: string; hcp: number; claimed: boolean }>
 }
 
 export interface TripBuilderForm {

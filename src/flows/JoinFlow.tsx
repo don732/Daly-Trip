@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { X } from 'lucide-react'
-import { findTripByCodeCloud } from '@/cloudStore'
+import { previewTripByCodeCloud } from '@/cloudStore'
 import { findTripByCode } from '@/localStore'
 import { useTripStore } from '@/context/TripContext'
+import { AuthGate } from '@/components/AuthGate'
 import { DalyLogo } from '@/components/DalyLogo'
 import type { AppState, Player, Trip } from '@/types/trip'
 import { c, flowInput } from '@/styles'
@@ -17,12 +18,46 @@ const STARTER_LINES = [
 
 type Phase = 'invite' | 'claim' | 'confirm'
 
-async function lookupTrip(code: string, appState: AppState): Promise<Trip | null> {
+interface JoinPreview {
+  id: string
+  name: string
+  location: string
+  players: Array<{ id: string; nick: string; hcp: number; venmo?: string; claimed?: boolean }>
+}
+
+function tripToPreview(trip: Trip): JoinPreview {
+  return {
+    id: trip.id,
+    name: trip.name,
+    location: trip.location,
+    players: trip.players.map(p => ({
+      id: p.id,
+      nick: p.nick || p.name,
+      hcp: p.hcp,
+      venmo: p.venmo,
+      claimed: false
+    }))
+  }
+}
+
+async function lookupPreview(code: string, appState: AppState): Promise<JoinPreview | null> {
   const upper = code.trim().toUpperCase()
   if (!upper) return null
   const local = findTripByCode(appState, upper)
-  if (local) return local
-  return findTripByCodeCloud(upper)
+  if (local) return tripToPreview(local)
+  const cloud = await previewTripByCodeCloud(upper)
+  if (!cloud) return null
+  return {
+    id: cloud.id,
+    name: cloud.name,
+    location: cloud.location,
+    players: cloud.players.map(p => ({
+      id: p.id,
+      nick: p.nick,
+      hcp: p.hcp,
+      claimed: p.claimed
+    }))
+  }
 }
 
 export function JoinFlow() {
@@ -30,7 +65,7 @@ export function JoinFlow() {
   const [searchParams] = useSearchParams()
   const { joinByCodeAsync, state } = useTripStore()
   const [code, setCode] = useState('')
-  const [preview, setPreview] = useState<Trip | null>(null)
+  const [preview, setPreview] = useState<JoinPreview | null>(null)
   const [claimed, setClaimed] = useState<Player | null>(null)
   const [nick, setNick] = useState('')
   const [hcp, setHcp] = useState('18')
@@ -47,7 +82,7 @@ export function JoinFlow() {
         setPreview(null)
         return
       }
-      const trip = await lookupTrip(upper, state)
+      const trip = await lookupPreview(upper, state)
       setPreview(trip)
     },
     [state]
@@ -65,8 +100,15 @@ export function JoinFlow() {
     return () => clearTimeout(t)
   }, [code, refreshPreview])
 
-  const pickPlayer = (player: Player) => {
-    setClaimed(player)
+  const pickPlayer = (player: JoinPreview['players'][number]) => {
+    setClaimed({
+      id: player.id,
+      nick: player.nick,
+      name: player.nick,
+      hcp: player.hcp,
+      venmo: player.venmo || '',
+      team: 'pine'
+    } as Player)
     setNick(player.nick || player.name || '')
     setHcp(String(player.hcp ?? 18))
     setVenmo(player.venmo || '')
@@ -81,7 +123,7 @@ export function JoinFlow() {
     }
     setLoading(true)
     setError('')
-    const trip = preview || (await lookupTrip(trimmed, state))
+    const trip = preview || (await lookupPreview(trimmed, state))
     setLoading(false)
     if (!trip) {
       setError('Trip not found. Check the code and try again.')
@@ -116,17 +158,18 @@ export function JoinFlow() {
   const initial = (displayTrip?.players[0]?.nick || '?').trim()[0]?.toUpperCase() || '?'
 
   return (
-    <div
-      className="dt-root dt-fade"
-      style={{
-        minHeight: '100vh',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: '24px 20px',
-        background: c.bg
-      }}
-    >
+    <AuthGate title="Player sign-in" subtitle="Sign in with your phone before joining. Your join code is the invite.">
+      <div
+        className="dt-root dt-fade"
+        style={{
+          minHeight: '100vh',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '24px 20px',
+          background: c.bg
+        }}
+      >
       <div style={{ maxWidth: 480, width: '100%', position: 'relative' }}>
         <button
           onClick={() => navigate('/')}
@@ -290,21 +333,26 @@ export function JoinFlow() {
                 <button
                   key={p.id}
                   className="dt-btn dt-press"
-                  onClick={() => pickPlayer(p)}
+                  onClick={() => !p.claimed && pickPlayer(p)}
+                  disabled={!!p.claimed}
                   style={{
                     width: '100%',
                     padding: 14,
                     borderRadius: 12,
-                    cursor: 'pointer',
+                    cursor: p.claimed ? 'default' : 'pointer',
                     background: c.card,
                     border: `1.5px solid ${c.line}`,
                     textAlign: 'left',
                     display: 'flex',
                     justifyContent: 'space-between',
-                    alignItems: 'center'
+                    alignItems: 'center',
+                    opacity: p.claimed ? 0.5 : 1
                   }}
                 >
-                  <span style={{ fontWeight: 700, color: c.creamSoft }}>{p.nick || p.name}</span>
+                  <span style={{ fontWeight: 700, color: c.creamSoft }}>
+                    {p.nick}
+                    {p.claimed ? ' · claimed' : ''}
+                  </span>
                   <span className="dt-cond" style={{ fontSize: 12, color: c.muted }}>HCP {p.hcp}</span>
                 </button>
               ))}
@@ -410,6 +458,7 @@ export function JoinFlow() {
           </div>
         ) : null}
       </div>
-    </div>
+      </div>
+    </AuthGate>
   )
 }

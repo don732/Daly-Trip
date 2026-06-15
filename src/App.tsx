@@ -1,4 +1,5 @@
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
+import { AuthProvider } from '@/context/AuthContext'
 import { TripProvider } from '@/context/TripContext'
 import { StyleInjector } from '@/components/StyleInjector'
 import { InstallPrompt } from '@/components/InstallPrompt'
@@ -9,18 +10,20 @@ import { MainApp, resolveInitialRoute } from '@/MainApp'
 
 export function App() {
   return (
-    <TripProvider>
-      <StyleInjector />
-      <InstallPrompt />
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<WelcomeFlow />} />
-          <Route path="/plan" element={<TripBuilderFlow />} />
-          <Route path="/join" element={<JoinFlow />} />
-          <Route path="/trip/:tripId" element={<MainApp />} />
-          <Route path="*" element={<Navigate to={resolveInitialRoute()} replace />} />
-        </Routes>
-      </BrowserRouter>
-    </TripProvider>
+    <AuthProvider>
+      <TripProvider>
+        <StyleInjector />
+        <InstallPrompt />
+        <BrowserRouter>
+          <Routes>
+            <Route path="/" element={<WelcomeFlow />} />
+            <Route path="/plan" element={<TripBuilderFlow />} />
+            <Route path="/join" element={<JoinFlow />} />
+            <Route path="/trip/:tripId" element={<MainApp />} />
+            <Route path="*" element={<Navigate to={resolveInitialRoute()} replace />} />
+          </Routes>
+        </BrowserRouter>
+      </TripProvider>
+    </AuthProvider>
   )
 }
