@@ -6,7 +6,7 @@ import { findTripByCode } from '@/localStore'
 import { useTripStore } from '@/context/TripContext'
 import { DEMO_TRIP_CODE, DEMO_TRIP_ID } from '@/demo/seedTrip'
 import { DalyLogo } from '@/components/DalyLogo'
-import type { Player, Trip } from '@/types/trip'
+import type { AppState, Player, Trip } from '@/types/trip'
 import { c, flowInput } from '@/styles'
 
 const STARTER_LINES = [
@@ -18,10 +18,10 @@ const STARTER_LINES = [
 
 type Phase = 'invite' | 'claim' | 'confirm'
 
-async function lookupTrip(code: string, localTrips: Record<string, Trip>): Promise<Trip | null> {
+async function lookupTrip(code: string, appState: AppState): Promise<Trip | null> {
   const upper = code.trim().toUpperCase()
   if (!upper) return null
-  const local = findTripByCode({ trips: localTrips, activeTripId: null }, upper)
+  const local = findTripByCode(appState, upper)
   if (local) return local
   const cloud = await findTripByCodeCloud(upper)
   if (cloud) return cloud
@@ -56,10 +56,10 @@ export function JoinFlow() {
         setPreview(demo)
         return
       }
-      const trip = await lookupTrip(upper, state.trips)
+      const trip = await lookupTrip(upper, state)
       setPreview(trip)
     },
-    [state.trips]
+    [state]
   )
 
   useEffect(() => {
@@ -96,7 +96,7 @@ export function JoinFlow() {
       navigate(`/trip/${DEMO_TRIP_ID}`)
       return
     }
-    let trip = preview || (await lookupTrip(trimmed, state.trips))
+    let trip = preview || (await lookupTrip(trimmed, state))
     setLoading(false)
     if (!trip) {
       setError('Trip not found. Try BOYS26 for the demo.')
