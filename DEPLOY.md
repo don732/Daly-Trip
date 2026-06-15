@@ -35,7 +35,7 @@ bash scripts/vps-deploy.sh
 | Site URL | `https://dalytrips.com` |
 | Redirect URLs | `https://dalytrips.com/**` |
 | Realtime | `trips` table in `supabase_realtime` publication |
-| Phone auth | Enable Phone provider; configure SMS (Twilio, etc.) |
+| Email auth | Enable Email provider (OTP). Phone/SMS can be added later via Twilio. |
 
 ### Apply auth migrations (required)
 
@@ -62,7 +62,7 @@ bash scripts/vps-deploy.sh
 | Step | Device A (organizer) | Device B (player) |
 |------|----------------------|-------------------|
 | 1 | Open `/` → **CREATE AN EVENT** | — |
-| 2 | Sign in with phone OTP | — |
+| 2 | Sign in with email OTP | — |
 | 3 | Complete headcount → **PAY $X** → event details → create | — |
 | 4 | Copy join code from invite screen | Open `/join?code=XXXXXX` |
 | 5 | Sign in if prompted; enter the trip; header shows **Live** | Sign in → claim roster slot → confirm join |
@@ -70,7 +70,7 @@ bash scripts/vps-deploy.sh
 
 If Device B does not update:
 
-- Confirm both devices signed in (menu shows phone mask)
+- Confirm both devices signed in (menu shows masked email)
 - Confirm both hit the same Supabase project (rebuilt after `.env` change)
 - Verify auth migrations applied and RLS is member-scoped
 - Check browser console for Realtime or RLS errors
@@ -83,5 +83,5 @@ If sync shows **Sync error**, hover the pill for the message. Common fixes: wron
 - Real Stripe checkout (`VITE_CHECKOUT_API_URL` + server endpoint)
 - Order of Merit from `merit_standings` in Supabase (Clubhouse today uses local empty merit)
 - Add-player beyond organizer headcount (`addPlayerToTrip`)
-- Named phone invite lists (code + auth is the current invite model)
+- Named invite lists (code + auth is the current invite model)
 - iOS PNG home-screen icon (SVG provided today)

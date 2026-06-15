@@ -5,7 +5,7 @@ import { useAuth } from '@/context/AuthContext'
 import { useTripStore, switchActiveRound } from '@/context/TripContext'
 import { getTrip } from '@/localStore'
 import { pullTripFromCloud } from '@/cloudStore'
-import { formatPhoneLabel } from '@/lib/auth'
+import { formatEmailLabel } from '@/lib/auth'
 import { TabBar } from '@/components/TabBar'
 import { ClubhousePanel } from '@/components/ClubhousePanel'
 import { StarterChat } from '@/components/StarterChat'
@@ -34,7 +34,7 @@ export function MainApp() {
   const { tripId } = useParams()
   const navigate = useNavigate()
   const { state, trip, updateTrip, setActiveTrip, upsertTrip, addFeedPost, reactToPost, getMyPlayerId } = useTripStore()
-  const { phone, signOut, configured: authConfigured } = useAuth()
+  const { email, signOut, configured: authConfigured } = useAuth()
   const [tab, setTab] = useState('trip')
   const [menuOpen, setMenuOpen] = useState(false)
   const [clubhouseOpen, setClubhouseOpen] = useState(false)
@@ -195,7 +195,7 @@ export function MainApp() {
               </div>
               {authConfigured ? (
                 <div className="dt-card" style={{ padding: 12, marginBottom: 12, fontSize: 12, color: c.muted }}>
-                  Signed in · {formatPhoneLabel(phone)}
+                  Signed in · {formatEmailLabel(email)}
                 </div>
               ) : null}
               {tripList.map(t => (

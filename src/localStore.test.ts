@@ -22,7 +22,7 @@ describe('localStore', () => {
 
   it('findTripByCode matches case-insensitively', () => {
     const trip = createTestTrip()
-    const state = saveTrip({ trips: {}, activeTripId: null, merit: [] }, trip)
+    const state = saveTrip({ trips: {}, activeTripId: null, merit: [], memberPlayers: {} }, trip)
     expect(findTripByCode(state, trip.code.toLowerCase())).toEqual(trip)
     expect(findTripByCode(state, trip.code.toUpperCase())).toEqual(trip)
   })

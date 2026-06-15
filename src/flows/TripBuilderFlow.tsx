@@ -145,7 +145,7 @@ export function TripBuilderFlow() {
   }
 
   return (
-    <AuthGate title="Organizer sign-in" subtitle="Sign in with your phone before creating a trip. Your account becomes the organizer.">
+    <AuthGate title="Organizer sign-in" subtitle="Sign in with your email before creating a trip. Your account becomes the organizer.">
       {shellCard(
         <>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>

@@ -7,16 +7,16 @@ export async function getSession() {
   return data.session
 }
 
-export async function signInWithOtp(phone: string) {
+export async function signInWithEmailOtp(email: string) {
   const sb = getSupabase()
   if (!sb) return { error: new Error('Supabase not configured') }
-  return sb.auth.signInWithOtp({ phone })
+  return sb.auth.signInWithOtp({ email })
 }
 
-export async function verifyOtp(phone: string, token: string) {
+export async function verifyEmailOtp(email: string, token: string) {
   const sb = getSupabase()
   if (!sb) return { error: new Error('Supabase not configured') }
-  return sb.auth.verifyOtp({ phone, token, type: 'sms' })
+  return sb.auth.verifyOtp({ email, token, type: 'email' })
 }
 
 export async function signOut() {
@@ -34,19 +34,21 @@ export function onAuthStateChange(handler: (userId: string | null) => void) {
   return () => data.subscription.unsubscribe()
 }
 
-export async function ensureProfile(userId: string, phone?: string | null) {
+export async function ensureProfile(userId: string, email?: string | null) {
   const sb = getSupabase()
   if (!sb) return
   await sb.from('profiles').upsert({
     id: userId,
-    display_name: phone || null
+    display_name: email || null
   })
 }
 
-export function formatPhoneLabel(phone: string | null | undefined): string {
-  if (!phone) return 'Signed in'
-  if (phone.length <= 4) return phone
-  const tail = phone.slice(-4)
-  const hidden = phone.slice(0, -4).replace(/\d/g, '•')
-  return `${hidden}${tail}`
+export function formatEmailLabel(email: string | null | undefined): string {
+  if (!email) return 'Signed in'
+  const at = email.indexOf('@')
+  if (at <= 0) return email
+  const local = email.slice(0, at)
+  const domain = email.slice(at + 1)
+  const maskedLocal = local.length <= 1 ? local : `${local[0]}${'•'.repeat(Math.min(local.length - 1, 4))}`
+  return `${maskedLocal}@${domain}`
 }

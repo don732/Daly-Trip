@@ -1,21 +1,21 @@
 import { useAuth } from '@/context/AuthContext'
-import { signInWithOtp, verifyOtp } from '@/lib/auth'
+import { signInWithEmailOtp, verifyEmailOtp } from '@/lib/auth'
 import { c, flowInput } from '@/styles'
 import { useState } from 'react'
 
 export function AuthPanel({
   required = false,
-  title = 'Sign in with phone',
-  subtitle = 'Verify your number to continue. We use this to link you to your roster slot.'
+  title = 'Sign in with email',
+  subtitle = 'We send a one-time code to your inbox to link you to your roster slot.'
 }: {
   required?: boolean
   title?: string
   subtitle?: string
 }) {
-  const { configured, userId, phone, refresh } = useAuth()
-  const [inputPhone, setInputPhone] = useState('')
+  const { configured, userId, email, refresh } = useAuth()
+  const [inputEmail, setInputEmail] = useState('')
   const [token, setToken] = useState('')
-  const [step, setStep] = useState<'phone' | 'otp'>('phone')
+  const [step, setStep] = useState<'email' | 'otp'>('email')
   const [message, setMessage] = useState('')
   const [busy, setBusy] = useState(false)
 
@@ -24,30 +24,30 @@ export function AuthPanel({
   if (userId) {
     return (
       <div className="dt-card" style={{ padding: 14, fontSize: 13, color: c.muted }}>
-        Signed in · {phone || 'account linked'}
+        Signed in · {email || 'account linked'}
       </div>
     )
   }
 
   const sendOtp = async () => {
-    if (!inputPhone.trim()) return
+    if (!inputEmail.trim()) return
     setBusy(true)
     setMessage('')
-    const { error } = await signInWithOtp(inputPhone.trim())
+    const { error } = await signInWithEmailOtp(inputEmail.trim())
     setBusy(false)
     if (error) {
       setMessage(error.message)
       return
     }
     setStep('otp')
-    setMessage('Code sent — check your phone')
+    setMessage('Code sent — check your email')
   }
 
   const confirmOtp = async () => {
     if (!token.trim()) return
     setBusy(true)
     setMessage('')
-    const { error } = await verifyOtp(inputPhone.trim(), token.trim())
+    const { error } = await verifyEmailOtp(inputEmail.trim(), token.trim())
     setBusy(false)
     if (error) {
       setMessage(error.message)
@@ -75,11 +75,12 @@ export function AuthPanel({
         {title}
       </div>
       <div style={{ fontSize: 13, color: c.muted, marginBottom: 20, lineHeight: 1.5 }}>{subtitle}</div>
-      {step === 'phone' ? (
+      {step === 'email' ? (
         <input
-          value={inputPhone}
-          onChange={e => setInputPhone(e.target.value)}
-          placeholder="+1 phone number"
+          type="email"
+          value={inputEmail}
+          onChange={e => setInputEmail(e.target.value)}
+          placeholder="you@example.com"
           style={flowInput}
         />
       ) : (
@@ -94,7 +95,7 @@ export function AuthPanel({
       <button
         className="dt-btn dt-glow dt-press"
         disabled={busy}
-        onClick={step === 'phone' ? sendOtp : confirmOtp}
+        onClick={step === 'email' ? sendOtp : confirmOtp}
         style={{
           width: '100%',
           marginTop: 16,
@@ -108,20 +109,20 @@ export function AuthPanel({
         }}
       >
         <span className="dt-cond" style={{ fontSize: 14, fontWeight: 800, letterSpacing: '.06em' }}>
-          {step === 'phone' ? 'SEND CODE' : 'VERIFY & CONTINUE'}
+          {step === 'email' ? 'SEND CODE' : 'VERIFY & CONTINUE'}
         </span>
       </button>
       {step === 'otp' ? (
         <button
           className="dt-btn"
           onClick={() => {
-            setStep('phone')
+            setStep('email')
             setToken('')
             setMessage('')
           }}
           style={{ width: '100%', marginTop: 10, padding: 10, background: 'transparent', color: c.muted, border: 'none', cursor: 'pointer' }}
         >
-          Use a different number
+          Use a different email
         </button>
       ) : null}
     </div>

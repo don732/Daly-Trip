@@ -1,13 +1,13 @@
 import { describe, expect, it } from 'vitest'
-import { formatPhoneLabel } from '@/lib/auth'
+import { formatEmailLabel } from '@/lib/auth'
 
-describe('formatPhoneLabel', () => {
-  it('returns fallback when phone is missing', () => {
-    expect(formatPhoneLabel(null)).toBe('Signed in')
-    expect(formatPhoneLabel(undefined)).toBe('Signed in')
+describe('formatEmailLabel', () => {
+  it('returns fallback when email is missing', () => {
+    expect(formatEmailLabel(null)).toBe('Signed in')
+    expect(formatEmailLabel(undefined)).toBe('Signed in')
   })
 
-  it('masks all but last four digits', () => {
-    expect(formatPhoneLabel('+15551234567')).toBe('+•••••••4567')
+  it('masks the local part of an email', () => {
+    expect(formatEmailLabel('player@example.com')).toBe('p••••@example.com')
   })
 })

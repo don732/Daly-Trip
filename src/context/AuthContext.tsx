@@ -8,7 +8,7 @@ interface AuthContextValue {
   loading: boolean
   session: Session | null
   userId: string | null
-  phone: string | null
+  email: string | null
   signOut: () => Promise<void>
   refresh: () => Promise<void>
 }
@@ -27,7 +27,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     const next = await getSession()
     setSession(next)
-    if (next?.user?.id) await ensureProfile(next.user.id, next.user.phone)
+    if (next?.user?.id) await ensureProfile(next.user.id, next.user.email)
     setLoading(false)
   }, [configured])
 
@@ -40,7 +40,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return onAuthStateChange(async userId => {
       const next = await getSession()
       setSession(next)
-      if (userId) await ensureProfile(userId, next?.user?.phone)
+      if (userId) await ensureProfile(userId, next?.user?.email)
       setLoading(false)
     })
   }, [configured, refresh])
@@ -56,7 +56,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       loading,
       session,
       userId: session?.user?.id ?? null,
-      phone: session?.user?.phone ?? null,
+      email: session?.user?.email ?? null,
       signOut,
       refresh
     }),

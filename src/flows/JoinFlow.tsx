@@ -109,7 +109,7 @@ export function JoinFlow() {
       venmo: player.venmo || '',
       team: 'pine'
     } as Player)
-    setNick(player.nick || player.name || '')
+    setNick(player.nick || '')
     setHcp(String(player.hcp ?? 18))
     setVenmo(player.venmo || '')
     setPhase('confirm')
@@ -158,7 +158,7 @@ export function JoinFlow() {
   const initial = (displayTrip?.players[0]?.nick || '?').trim()[0]?.toUpperCase() || '?'
 
   return (
-    <AuthGate title="Player sign-in" subtitle="Sign in with your phone before joining. Your join code is the invite.">
+    <AuthGate title="Player sign-in" subtitle="Sign in with your email before joining. Your join code is the invite.">
       <div
         className="dt-root dt-fade"
         style={{
