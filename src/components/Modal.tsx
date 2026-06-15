@@ -38,7 +38,7 @@ export function SheetHeader({ title, onClose }: { title: string; onClose: () => 
           width: 36,
           height: 36,
           borderRadius: 999,
-          background: 'rgba(255,255,255,.06)',
+          background: 'rgba(13,31,60,.06)',
           border: `1px solid ${c.line}`,
           color: c.cream,
           display: 'flex',

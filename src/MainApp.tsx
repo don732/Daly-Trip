@@ -86,7 +86,7 @@ export function MainApp() {
             top: 0,
             zIndex: 40,
             padding: 'calc(10px + env(safe-area-inset-top)) 16px 10px',
-            background: 'linear-gradient(180deg,#06170F 70%,transparent)',
+            background: `linear-gradient(180deg,${c.bg} 70%,transparent)`,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between'
@@ -162,7 +162,19 @@ export function MainApp() {
             <div
               className="dt-sheet"
               onClick={e => e.stopPropagation()}
-              style={{ position: 'absolute', bottom: 0, left: '50%', transform: 'translateX(-50%)', width: '100%', maxWidth: 480, padding: 20 }}
+              style={{
+                position: 'absolute',
+                bottom: 0,
+                left: '50%',
+                transform: 'translateX(-50%)',
+                width: '100%',
+                maxWidth: 480,
+                padding: 20,
+                background: c.card,
+                borderTopLeftRadius: 24,
+                borderTopRightRadius: 24,
+                border: `1px solid ${c.gold}`
+              }}
             >
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
                 <span className="dt-cond" style={{ fontSize: 11, letterSpacing: '.12em', color: c.gold, textTransform: 'uppercase' }}>Trips</span>
@@ -185,7 +197,7 @@ export function MainApp() {
                     padding: 14,
                     borderRadius: 12,
                     marginBottom: 8,
-                    background: t.id === trip.id ? 'rgba(201,162,75,.12)' : c.card,
+                    background: t.id === trip.id ? 'rgba(184,144,58,.12)' : c.card,
                     border: `1px solid ${c.line}`,
                     color: c.cream
                   }}

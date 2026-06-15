@@ -28,7 +28,7 @@ export function TripTab({
         <p style={{ margin: 0, fontSize: 14, lineHeight: 1.55, color: c.cream }}>{drop}</p>
       </div>
 
-      <div className="dt-card" style={{ padding: 18, marginBottom: 14, background: 'linear-gradient(160deg,#0D2B1F 0%,#081912 100%)' }}>
+      <div className="dt-card" style={{ padding: 18, marginBottom: 14 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12 }}>
           <div>
             <h2 style={{ margin: 0, fontSize: 22, fontWeight: 800, color: c.cream }}>{trip.name}</h2>
@@ -42,7 +42,7 @@ export function TripTab({
             <div className="dt-num" style={{ fontSize: 18, fontWeight: 800, color: c.cream, marginTop: 2 }}>{trip.code}</div>
           </div>
         </div>
-        <div style={{ marginTop: 14, padding: '10px 12px', borderRadius: 12, background: 'rgba(255,255,255,.04)', border: `1px solid ${c.line}` }}>
+        <div style={{ marginTop: 14, padding: '10px 12px', borderRadius: 12, background: 'rgba(13,31,60,.04)', border: `1px solid ${c.line}` }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <Trophy size={16} color={c.gold} />
             <span style={{ fontSize: 13, color: c.cream }}>

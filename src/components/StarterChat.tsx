@@ -39,9 +39,9 @@ export function StarterChat({ trip, onClose }: { trip: Trip; onClose: () => void
           width: '100%',
           maxWidth: 480,
           height: '70vh',
-          background: 'linear-gradient(170deg,#0D2B1F,#06170F)',
+          background: c.card,
           borderRadius: '24px 24px 0 0',
-          borderTop: `1px solid ${c.goldDim}`,
+          borderTop: `1px solid ${c.goldBright}`,
           display: 'flex',
           flexDirection: 'column'
         }}

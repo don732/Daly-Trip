@@ -1,71 +1,160 @@
 import { useNavigate } from 'react-router-dom'
-import { Flag, Sparkles, Users } from 'lucide-react'
 import { useTripStore } from '@/context/TripContext'
-import { AuthPanel } from '@/components/AuthPanel'
+import { DalyLogo } from '@/components/DalyLogo'
 import { c } from '@/styles'
+
+const FEATURES = [
+  ['⛳  Live scoring', 'Every player, every hole, in real time.'],
+  ['💰  Money, handled', 'Skins, Nassau, presses — auto-tracked and settled up.'],
+  ['🏆  Team formats', 'Best-ball, scramble, match play and 36 more formats.'],
+  ['🤖  The Starter', 'An AI commissioner narrating your trip and talking trash.'],
+  ['🎬  Trip Movie + Order of Merit', 'Highlight reel at the end, season standings all year.']
+] as const
 
 export function WelcomeFlow() {
   const navigate = useNavigate()
   const { loadDemo } = useTripStore()
 
   return (
-    <div className="dt-root dt-fade-in" style={{ minHeight: '100%', background: c.bg }}>
-      <div className="dt-shell" style={{ padding: 'calc(28px + env(safe-area-inset-top)) 20px 40px' }}>
-        <div style={{ textAlign: 'center', marginBottom: 32 }}>
+    <div
+      className="dt-root dt-fade"
+      style={{
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '24px 16px',
+        background: c.bg
+      }}
+    >
+      <div
+        style={{
+          maxWidth: 440,
+          width: '100%',
+          background: c.card,
+          border: `2px solid ${c.goldBright}`,
+          borderRadius: 20,
+          padding: '30px 20px 24px',
+          boxShadow: '0 8px 32px rgba(13,31,60,.14)'
+        }}
+      >
+        <div style={{ textAlign: 'center', marginBottom: 20 }}>
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 16 }}>
+            <DalyLogo size={72} />
+          </div>
           <div
-            style={{
-              width: 72,
-              height: 72,
-              borderRadius: 20,
-              margin: '0 auto 16px',
-              background: 'linear-gradient(135deg,#0D2B1F,#06170F)',
-              border: `1px solid ${c.goldDim}`,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center'
-            }}
+            className="dt-cond"
+            style={{ fontSize: 11, letterSpacing: '.2em', color: c.gold, marginBottom: 6 }}
           >
-            <Flag size={34} color={c.gold} />
+            THE GOLF-TRIP OPERATING SYSTEM
           </div>
-          <h1 style={{ margin: 0, fontSize: 32, fontWeight: 800, color: c.cream, letterSpacing: '-.02em' }}>Daly Trips</h1>
-          <p style={{ margin: '10px 0 0', color: c.muted, fontSize: 14, lineHeight: 1.5, maxWidth: 320, marginInline: 'auto' }}>
-            The operating system for golf trips with the boys. Live scoring, skins, leaderboards, settlement, and a year-round feed.
-          </p>
+          <div className="dt-display" style={{ fontSize: 36, fontWeight: 900, color: c.creamSoft, lineHeight: 1 }}>
+            Daly Trips
+          </div>
+          <div
+            className="dt-cond"
+            style={{ fontSize: 15, color: c.gold, letterSpacing: '.04em', marginTop: 8, fontWeight: 600 }}
+          >
+            Run the trip. Win the trip.
+          </div>
+          <div style={{ fontSize: 14, color: c.cream, lineHeight: 1.55, marginTop: 10, opacity: 0.75 }}>
+            Run your buddies&apos; golf trip like a tour event — scoring, bets, teams, and trash talk, all in one place.
+          </div>
         </div>
 
-        <div className="dt-card-gold" style={{ padding: 20, marginBottom: 16 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
-            <Sparkles size={18} color={c.gold} />
-            <span className="dt-cond" style={{ fontSize: 11, letterSpacing: '.12em', color: c.gold, textTransform: 'uppercase' }}>
-              Why sign up
-            </span>
-          </div>
-          <ul style={{ margin: 0, paddingLeft: 18, color: c.cream, fontSize: 13, lineHeight: 1.7 }}>
-            <li>Run the trip like a tour event — scoring, money, teams</li>
-            <li>The Starter narrates the chaos in real time</li>
-            <li>Settle up with Venmo-ready ledger math</li>
-          </ul>
+        <div
+          className="dt-cond"
+          style={{ fontSize: 11, letterSpacing: '.18em', color: c.gold, fontWeight: 700, marginBottom: 10 }}
+        >
+          WHAT YOU GET
         </div>
-
-        <AuthPanel />
+        <div style={{ display: 'grid', gap: 8 }}>
+          {FEATURES.map(([title, desc], i) => (
+            <div
+              key={i}
+              style={{
+                display: 'flex',
+                gap: 12,
+                alignItems: 'center',
+                padding: '12px 14px',
+                background: c.cardFeature,
+                border: `1.5px solid ${c.goldBright}`,
+                borderRadius: 12
+              }}
+            >
+              <span
+                style={{
+                  flexShrink: 0,
+                  width: 28,
+                  height: 28,
+                  borderRadius: 999,
+                  background: c.gold,
+                  border: `2px solid ${c.cardWarm}`,
+                  color: c.ink,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: 13,
+                  fontWeight: 900
+                }}
+              >
+                ✓
+              </span>
+              <div style={{ flex: 1 }}>
+                <div className="dt-cond" style={{ fontSize: 15, fontWeight: 800, color: c.creamSoft, lineHeight: 1.2 }}>
+                  {title}
+                </div>
+                <div style={{ fontSize: 13, color: c.cream, lineHeight: 1.4, marginTop: 3, opacity: 0.72 }}>{desc}</div>
+              </div>
+            </div>
+          ))}
+        </div>
 
         <button
-          className="dt-btn dt-btn-gold dt-glow"
+          className="dt-btn dt-glow dt-press"
+          onClick={() => navigate('/plan')}
+          style={{
+            width: '100%',
+            marginTop: 20,
+            padding: 18,
+            borderRadius: 13,
+            cursor: 'pointer',
+            background: c.felt,
+            border: `2px solid ${c.goldBright}`,
+            color: c.ink,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
+          }}
+        >
+          <span className="dt-cond" style={{ fontSize: 15, fontWeight: 800, letterSpacing: '.06em' }}>
+            CREATE AN EVENT
+          </span>
+        </button>
+
+        <button
+          className="dt-btn dt-press"
           onClick={() => {
             loadDemo()
             navigate('/trip/demo')
           }}
-          style={{ width: '100%', padding: 16, borderRadius: 14, fontSize: 14, marginBottom: 10 }}
+          style={{
+            width: '100%',
+            marginTop: 10,
+            padding: 16,
+            borderRadius: 13,
+            cursor: 'pointer',
+            background: c.card,
+            border: `2px solid ${c.gold}`,
+            color: c.felt,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
+          }}
         >
-          Explore the demo
-        </button>
-
-        <button
-          className="dt-btn dt-btn-ghost"
-          onClick={() => navigate('/plan')}
-          style={{ width: '100%', padding: 16, borderRadius: 14, fontSize: 14, marginBottom: 10 }}
-        >
-          Get Started — Create a trip
+          <span className="dt-cond" style={{ fontSize: 14, fontWeight: 700, letterSpacing: '.06em' }}>
+            EXPLORE THE DEMO
+          </span>
         </button>
 
         <button
@@ -73,20 +162,22 @@ export function WelcomeFlow() {
           onClick={() => navigate('/join')}
           style={{
             width: '100%',
-            padding: 14,
-            borderRadius: 14,
-            fontSize: 13,
+            marginTop: 10,
+            padding: 10,
+            borderRadius: 10,
+            cursor: 'pointer',
             background: 'transparent',
+            border: 'none',
             color: c.muted,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: 8
+            fontSize: 12
           }}
         >
-          <Users size={16} />
           Have a join code?
         </button>
+
+        <div style={{ fontSize: 11, color: c.cream, lineHeight: 1.6, marginTop: 16, textAlign: 'center', opacity: 0.5 }}>
+          Tracks friendly wagers only — never places, holds, or processes bets or payments.
+        </div>
       </div>
     </div>
   )

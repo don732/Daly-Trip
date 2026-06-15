@@ -12,7 +12,7 @@ export function ShareQr({ code, tripName }: { code: string; tripName: string }) 
     QRCode.toCanvas(canvasRef.current, joinUrl, {
       width: 200,
       margin: 2,
-      color: { dark: '#06170F', light: '#F5F0E6' }
+      color: { dark: c.felt, light: c.bg }
     }).catch(() => undefined)
   }, [open, joinUrl])
 
