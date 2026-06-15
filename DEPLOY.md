@@ -1,4 +1,4 @@
-# Daly Trips — Deploy & Live Demo
+# Daly Trips — Deploy
 
 ## Prerequisites
 
@@ -36,7 +36,7 @@ bash scripts/vps-deploy.sh
 | Redirect URLs | `https://dalytrips.com/**` |
 | Realtime | `trips` table in `supabase_realtime` publication |
 
-Phone auth is optional for the demo. Anon sync works with current RLS on seed trips.
+Phone auth is optional. Anon sync works with current RLS on `trips`.
 
 ## Deploy
 
@@ -49,44 +49,28 @@ cd /path/to/daly-trip
 bash scripts/vps-deploy.sh
 ```
 
-## Seed the cloud demo (one time)
+## Post-deploy smoke test (create and join)
 
-1. Open `https://dalytrips.com`
-2. Tap **Explore the demo**
-3. Header should show sync pill **Live** (not "Local only")
-4. In Supabase Table Editor → `trips`:
-   - One row with `id = seed-demo-boys26`
-   - `code = BOYS26`
-   - `seed = true`
-
-If sync shows **Sync error**, hover the pill for the message. Common fixes: wrong anon key, RLS blocking upsert, or Realtime not enabled.
-
-## Two-phone smoke test
-
-| Step | Device A | Device B |
-|------|----------|----------|
-| 1 | Explore demo | Join → code `BOYS26` or scan QR from Feed tab |
-| 2 | Both show **Live** in header | Same |
-| 3 | Play → change a score on hole 1 | Board tab updates within ~1–2 s |
+| Step | Device A (organizer) | Device B (player) |
+|------|----------------------|-------------------|
+| 1 | Open `/` → **CREATE AN EVENT** | — |
+| 2 | Complete headcount → **PAY $X** → event details → create | — |
+| 3 | Copy join code from invite screen (or Feed QR) | Open `/join?code=XXXXXX` |
+| 4 | Enter the trip; header shows **Live** | Claim a roster slot → confirm join |
+| 5 | Play → change a score on hole 1 | Board tab updates within ~1–2 s |
 
 If Device B does not update:
 
 - Confirm both devices hit the same Supabase project (rebuilt after `.env` change)
 - Check browser console for Realtime errors
-- Verify `trips` row updates `updated_at` when A scores
-- Clear site data / localStorage if an old demo trip with code `BOYS26` but a different id blocks join
+- Verify the `trips` row updates `updated_at` when A scores
+- Clear site data / localStorage if a stale trip blocks join
 
-## Demo trip identity
-
-The demo always uses:
-
-- Trip id: `seed-demo-boys26`
-- Join code: `BOYS26`
-
-Re-opening the demo reuses the same id so cloud upserts do not conflict on the unique `code` column.
+If sync shows **Sync error**, hover the pill for the message. Common fixes: wrong anon key, RLS blocking upsert, or Realtime not enabled.
 
 ## Post-ship hardening (later)
 
 - Tighten `trips_read_by_code` RLS
 - Wire `trip_members` when auth ships
 - Real Stripe checkout API (`VITE_CHECKOUT_API_URL`)
+- Order of Merit from `merit_standings` in Supabase

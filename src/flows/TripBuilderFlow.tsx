@@ -7,9 +7,6 @@ import { getSession } from '@/lib/auth'
 import { recordTripPayment, startCheckout, TRIP_PRICE } from '@/lib/checkout'
 import type { TeamKey, Trip, TripBuilderForm } from '@/types/trip'
 import { c, flowInput } from '@/styles'
-import { Modal, SheetHeader } from '@/components/Modal'
-import { CoursePicker } from '@/components/CoursePicker'
-
 const STEPS = ['Players', 'Pay', 'Event Details'] as const
 const PRESETS = [4, 6, 8, 10, 12, 16] as const
 
@@ -331,26 +328,6 @@ export function TripBuilderFlow() {
           <div style={{ fontSize: 11, color: c.muted, lineHeight: 1.6, marginTop: 12, textAlign: 'center' }}>
             Secure payment · Organizer pays once · Players join free
           </div>
-          <button
-            onClick={() => {
-              setPaid(true)
-              setStep(2)
-            }}
-            className="dt-btn"
-            style={{
-              width: '100%',
-              marginTop: 12,
-              padding: 12,
-              borderRadius: 12,
-              cursor: 'pointer',
-              background: 'transparent',
-              border: `1px solid ${c.line}`,
-              color: c.muted,
-              fontSize: 12
-            }}
-          >
-            Skip for now
-          </button>
         </div>
       ) : null}
 
@@ -575,91 +552,5 @@ export function TripBuilderFlow() {
         </div>
       ) : null}
     </>
-  )
-}
-
-export function TripBuilderModal({ onClose, onCreated }: { onClose: () => void; onCreated: (tripId: string) => void }) {
-  const { upsertTrip } = useTripStore()
-  const [form, setForm] = useState(defaultForm())
-
-  const finish = () => {
-    const trip = makeTripFromForm({
-      name: form.name,
-      location: form.location,
-      start: form.start,
-      end: form.end,
-      players: form.players.map(p => ({ nick: p.nick, hcp: p.hcp, team: p.team })),
-      paid: true,
-      mode: form.mode,
-      gameFormat: form.format,
-      stake: form.stake,
-      skins: form.skinsOn,
-      skinsStake: form.skinsStake,
-      rounds: form.rounds.map(r => ({ course: r.courseName, name: r.name }))
-    })
-    upsertTrip(trip)
-    onCreated(trip.id)
-    onClose()
-  }
-
-  return (
-    <Modal onClose={onClose} center>
-      <div
-        style={{
-          background: c.card,
-          borderRadius: 24,
-          padding: '24px 24px 36px',
-          maxHeight: '90vh',
-          overflowY: 'auto',
-          border: `2px solid ${c.goldBright}`,
-          boxShadow: '0 12px 48px rgba(13,31,60,.22)'
-        }}
-      >
-        <SheetHeader title="Quick trip" onClose={onClose} />
-        <Field label="Trip name" value={form.name} onChange={v => setForm(f => ({ ...f, name: v }))} />
-        <Field label="Location" value={form.location} onChange={v => setForm(f => ({ ...f, location: v }))} />
-        <label style={{ display: 'block', fontSize: 12, color: c.muted, marginBottom: 12 }}>
-          Course
-          <div style={{ marginTop: 6 }}>
-            <CoursePicker
-              value={form.rounds[0]?.courseName || ''}
-              onChange={v =>
-                setForm(f => ({
-                  ...f,
-                  rounds: [{ ...f.rounds[0], courseName: v, name: f.rounds[0]?.name || 'Round 1' }]
-                }))
-              }
-            />
-          </div>
-        </label>
-        <button
-          className="dt-btn dt-btn-gold"
-          onClick={finish}
-          disabled={!form.name.trim()}
-          style={{ width: '100%', padding: 14, borderRadius: 12, marginTop: 8 }}
-        >
-          Create
-        </button>
-      </div>
-    </Modal>
-  )
-}
-
-function Field({
-  label,
-  value,
-  onChange,
-  type = 'text'
-}: {
-  label: string
-  value: string
-  onChange: (v: string) => void
-  type?: string
-}) {
-  return (
-    <label style={{ display: 'block', fontSize: 12, color: c.muted, marginBottom: 12 }}>
-      {label}
-      <input type={type} value={value} onChange={e => onChange(e.target.value)} style={{ ...flowInput, marginTop: 6 }} />
-    </label>
   )
 }

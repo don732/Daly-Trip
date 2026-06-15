@@ -4,7 +4,6 @@ import { X } from 'lucide-react'
 import { findTripByCodeCloud } from '@/cloudStore'
 import { findTripByCode } from '@/localStore'
 import { useTripStore } from '@/context/TripContext'
-import { DEMO_TRIP_CODE, DEMO_TRIP_ID } from '@/demo/seedTrip'
 import { DalyLogo } from '@/components/DalyLogo'
 import type { AppState, Player, Trip } from '@/types/trip'
 import { c, flowInput } from '@/styles'
@@ -23,16 +22,13 @@ async function lookupTrip(code: string, appState: AppState): Promise<Trip | null
   if (!upper) return null
   const local = findTripByCode(appState, upper)
   if (local) return local
-  const cloud = await findTripByCodeCloud(upper)
-  if (cloud) return cloud
-  if (upper === DEMO_TRIP_CODE) return null
-  return null
+  return findTripByCodeCloud(upper)
 }
 
 export function JoinFlow() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
-  const { joinByCodeAsync, state, loadDemo } = useTripStore()
+  const { joinByCodeAsync, state } = useTripStore()
   const [code, setCode] = useState('')
   const [preview, setPreview] = useState<Trip | null>(null)
   const [claimed, setClaimed] = useState<Player | null>(null)
@@ -49,11 +45,6 @@ export function JoinFlow() {
       const upper = raw.trim().toUpperCase()
       if (upper.length < 4) {
         setPreview(null)
-        return
-      }
-      if (upper === DEMO_TRIP_CODE) {
-        const demo = state.trips[DEMO_TRIP_ID] || null
-        setPreview(demo)
         return
       }
       const trip = await lookupTrip(upper, state)
@@ -90,16 +81,10 @@ export function JoinFlow() {
     }
     setLoading(true)
     setError('')
-    if (trimmed === DEMO_TRIP_CODE) {
-      loadDemo()
-      setLoading(false)
-      navigate(`/trip/${DEMO_TRIP_ID}`)
-      return
-    }
-    let trip = preview || (await lookupTrip(trimmed, state))
+    const trip = preview || (await lookupTrip(trimmed, state))
     setLoading(false)
     if (!trip) {
-      setError('Trip not found. Try BOYS26 for the demo.')
+      setError('Trip not found. Check the code and try again.')
       return
     }
     setPreview(trip)
@@ -124,7 +109,7 @@ export function JoinFlow() {
     })
     setLoading(false)
     if (found) navigate(`/trip/${found.id}`)
-    else setError('Trip not found. Try BOYS26 for the demo.')
+    else setError('Trip not found. Check the code and try again.')
   }
 
   const displayTrip = preview
@@ -254,7 +239,7 @@ export function JoinFlow() {
                 setCode(e.target.value.toUpperCase())
                 setError('')
               }}
-              placeholder="BOYS26"
+              placeholder="ABC123"
               maxLength={6}
               style={{
                 ...flowInput,

@@ -1,19 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { strokesOnHole, netScore, buildLeaderboard, computeSkins } from '@/engine/scoring'
-import { createDemoTrip } from '@/demo/seedTrip'
-import type { Trip } from '@/types/trip'
-
-function withUniqueSkinWinner(trip: Trip): Trip {
-  const scores = Object.fromEntries(
-    trip.players.map((p, i) => {
-      const row = Array(18).fill(5)
-      row[0] = i === 0 ? 3 : 7
-      return [p.id, row]
-    })
-  )
-  const rounds = trip.rounds.map((r, i) => (i === 0 ? { ...r, scores } : r))
-  return { ...trip, scores, rounds }
-}
+import { createTestTrip, withUniqueSkinWinner } from '@/test/fixtures'
 
 describe('strokesOnHole', () => {
   it('allocates extra strokes on lowest handicap holes', () => {
@@ -35,8 +22,8 @@ describe('netScore', () => {
 })
 
 describe('buildLeaderboard', () => {
-  it('computes thru and to-par for demo trip', () => {
-    const trip = createDemoTrip()
+  it('computes thru and to-par for scored trip', () => {
+    const trip = createTestTrip({ playerCount: 8, fillScores: true })
     const rows = buildLeaderboard(trip)
     expect(rows.length).toBe(8)
     expect(rows.every(r => r.thru === 18)).toBe(true)
@@ -45,7 +32,7 @@ describe('buildLeaderboard', () => {
 
 describe('computeSkins', () => {
   it('returns pot and winners for scored holes', () => {
-    const trip = withUniqueSkinWinner(createDemoTrip())
+    const trip = withUniqueSkinWinner(createTestTrip())
     const skins = computeSkins(trip)
     expect(skins.pot).toBeGreaterThan(0)
     expect(Object.keys(skins.winners).length).toBeGreaterThan(0)

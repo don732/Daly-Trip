@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { Menu, MessageSquare, Trophy, X } from 'lucide-react'
 import { useTripStore, switchActiveRound } from '@/context/TripContext'
 import { getTrip } from '@/localStore'
+import { pullTripFromCloud } from '@/cloudStore'
 import { TabBar } from '@/components/TabBar'
 import { ClubhousePanel } from '@/components/ClubhousePanel'
 import { StarterChat } from '@/components/StarterChat'
@@ -17,7 +18,6 @@ import { HighlightReel } from '@/components/HighlightReel'
 import { LiveTicker } from '@/components/LiveTicker'
 import { DalyLogo } from '@/components/DalyLogo'
 import { SyncStatus } from '@/components/SyncStatus'
-import { DEMO_TRIP_ID } from '@/demo/seedTrip'
 import { BUILD_STAMP, c } from '@/styles'
 
 const TABS = [
@@ -31,7 +31,7 @@ const TABS = [
 export function MainApp() {
   const { tripId } = useParams()
   const navigate = useNavigate()
-  const { state, trip, updateTrip, setActiveTrip, addFeedPost, reactToPost, loadDemo } = useTripStore()
+  const { state, trip, updateTrip, setActiveTrip, upsertTrip, addFeedPost, reactToPost } = useTripStore()
   const [tab, setTab] = useState('trip')
   const [menuOpen, setMenuOpen] = useState(false)
   const [clubhouseOpen, setClubhouseOpen] = useState(false)
@@ -41,21 +41,20 @@ export function MainApp() {
 
   useEffect(() => {
     if (!tripId) return
-    if (tripId === 'demo') {
-      loadDemo()
-      navigate(`/trip/${DEMO_TRIP_ID}`, { replace: true })
-      return
-    }
-    if (tripId === DEMO_TRIP_ID) {
-      const existing = getTrip(state, DEMO_TRIP_ID)
-      if (existing) setActiveTrip(DEMO_TRIP_ID)
-      else loadDemo()
-      return
-    }
     const found = getTrip(state, tripId)
-    if (found) setActiveTrip(tripId)
-    else if (tripId.toUpperCase() === 'BOYS26') loadDemo()
-  }, [tripId, state.trips, setActiveTrip, loadDemo, navigate])
+    if (found) {
+      if (state.activeTripId !== tripId) setActiveTrip(tripId)
+      return
+    }
+    let cancelled = false
+    pullTripFromCloud(tripId).then(cloud => {
+      if (cancelled || !cloud) return
+      upsertTrip(cloud)
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [tripId, state.trips, state.activeTripId, setActiveTrip, upsertTrip])
 
   if (!trip) {
     return (

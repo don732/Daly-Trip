@@ -1,5 +1,4 @@
 import { useNavigate } from 'react-router-dom'
-import { useTripStore } from '@/context/TripContext'
 import { DalyLogo } from '@/components/DalyLogo'
 import { c } from '@/styles'
 
@@ -13,7 +12,6 @@ const FEATURES = [
 
 export function WelcomeFlow() {
   const navigate = useNavigate()
-  const { loadDemo } = useTripStore()
 
   return (
     <div
@@ -129,31 +127,6 @@ export function WelcomeFlow() {
         >
           <span className="dt-cond" style={{ fontSize: 15, fontWeight: 800, letterSpacing: '.06em' }}>
             CREATE AN EVENT
-          </span>
-        </button>
-
-        <button
-          className="dt-btn dt-press"
-          onClick={() => {
-            loadDemo()
-            navigate('/trip/demo')
-          }}
-          style={{
-            width: '100%',
-            marginTop: 10,
-            padding: 16,
-            borderRadius: 13,
-            cursor: 'pointer',
-            background: c.card,
-            border: `2px solid ${c.gold}`,
-            color: c.felt,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center'
-          }}
-        >
-          <span className="dt-cond" style={{ fontSize: 14, fontWeight: 700, letterSpacing: '.06em' }}>
-            EXPLORE THE DEMO
           </span>
         </button>
 

@@ -28,6 +28,11 @@ export function ClubhousePanel({ onClose }: { onClose: () => void }) {
             Order of Merit · Clubhouse
           </span>
         </div>
+        {state.merit.length === 0 ? (
+          <div className="dt-card" style={{ padding: 20, marginBottom: 8, textAlign: 'center', color: c.muted, fontSize: 14 }}>
+            No standings yet
+          </div>
+        ) : null}
         {state.merit.map((row, i) => (
           <div key={row.nick} className="dt-card" style={{ padding: 14, marginBottom: 8, display: 'flex', alignItems: 'center', gap: 12 }}>
             <span className="dt-num" style={{ width: 24, fontWeight: 800, color: i === 0 ? c.gold : c.muted }}>{i + 1}</span>

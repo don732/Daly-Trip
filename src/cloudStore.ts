@@ -37,6 +37,12 @@ export function onSyncStateChange(listener: SyncListener): () => void {
   }
 }
 
+export function resetCloudStoreForTests(): void {
+  client = null
+  syncState = 'offline'
+  syncError = null
+}
+
 export function getSupabase(): SupabaseClient | null {
   if (client) return client
   const url = import.meta.env.VITE_SUPABASE_URL

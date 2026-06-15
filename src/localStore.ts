@@ -1,23 +1,24 @@
 import type { AppState, Trip } from '@/types/trip'
-import { DEFAULT_MERIT } from '@/demo/seedTrip'
 
 export const STORAGE_KEY = 'daly-trips:v1'
 
+const emptyState = (): AppState => ({ trips: {}, activeTripId: null, merit: [] })
+
 export function loadState(): AppState {
   if (typeof window === 'undefined') {
-    return { trips: {}, activeTripId: null, merit: DEFAULT_MERIT }
+    return emptyState()
   }
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
-    if (!raw) return { trips: {}, activeTripId: null, merit: DEFAULT_MERIT }
+    if (!raw) return emptyState()
     const parsed = JSON.parse(raw) as AppState
     return {
       trips: parsed.trips || {},
       activeTripId: parsed.activeTripId || null,
-      merit: parsed.merit?.length ? parsed.merit : DEFAULT_MERIT
+      merit: parsed.merit || []
     }
   } catch {
-    return { trips: {}, activeTripId: null, merit: DEFAULT_MERIT }
+    return emptyState()
   }
 }
 
