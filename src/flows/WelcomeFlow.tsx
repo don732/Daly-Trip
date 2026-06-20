@@ -1,3 +1,4 @@
+import { useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { DalyLogo } from '@/components/DalyLogo'
 import { useTripStore } from '@/context/TripContext'
@@ -5,21 +6,28 @@ import { DEMO_SEEN_KEY } from '@/demo/constants'
 import { c } from '@/styles'
 
 const FEATURES = [
-  ['⛳  Live scoring', 'Every player, every hole, in real time.'],
-  ['💰  Money, handled', 'Skins, Nassau, presses — auto-tracked and settled up.'],
-  ['🏆  Team formats', 'Best-ball, scramble, match play and 36 more formats.'],
-  ['🤖  The Starter', 'An AI commissioner narrating your trip and talking trash.'],
+  ['⛳  Live scoring', 'Every player, every hole — cards sync in real time.'],
+  ['💰  Money, handled', 'Skins, Nassau, presses, snake & CTP — tracked and settled.'],
+  ['🏆  Team formats', 'Stroke, scramble, shamble, match play, stableford & more.'],
+  ['🤖  The Starter', 'AI commissioner — roasts, recaps, and daily drops.'],
   ['🎬  Trip Movie + Order of Merit', 'Highlight reel at the end, season standings all year.']
 ] as const
 
 export function WelcomeFlow() {
   const navigate = useNavigate()
-  const { loadDemo } = useTripStore()
+  const { loadDemo, state, trip } = useTripStore()
   const seenDemo = typeof window !== 'undefined' && localStorage.getItem(DEMO_SEEN_KEY) === '1'
 
+  const resumeTrip = useMemo(() => {
+    if (trip) return trip
+    const id = state.activeTripId
+    if (!id) return null
+    return state.trips[id] || null
+  }, [state.activeTripId, state.trips, trip])
+
   const exploreDemo = () => {
-    const trip = loadDemo()
-    navigate(`/trip/${trip.id}`)
+    const demoTrip = loadDemo()
+    navigate(`/trip/${demoTrip.id}`)
   }
 
   return (
@@ -68,6 +76,32 @@ export function WelcomeFlow() {
             Run your buddies&apos; golf trip like a tour event — scoring, bets, teams, and trash talk, all in one place.
           </div>
         </div>
+
+        {resumeTrip ? (
+          <button
+            className="dt-btn dt-glow dt-press"
+            onClick={() => navigate(`/trip/${resumeTrip.id}`)}
+            style={{
+              width: '100%',
+              marginBottom: 12,
+              padding: 16,
+              borderRadius: 13,
+              cursor: 'pointer',
+              background: c.felt,
+              border: `2px solid ${c.goldBright}`,
+              color: c.ink,
+              textAlign: 'left'
+            }}
+          >
+            <div className="dt-cond" style={{ fontSize: 11, letterSpacing: '.14em', opacity: 0.85, marginBottom: 4 }}>
+              CONTINUE YOUR TRIP
+            </div>
+            <div style={{ fontSize: 16, fontWeight: 800 }}>{resumeTrip.name}</div>
+            <div style={{ fontSize: 12, opacity: 0.8, marginTop: 4 }}>
+              Code {resumeTrip.code} · {resumeTrip.players.length} players
+            </div>
+          </button>
+        ) : null}
 
         <div
           className="dt-cond"
@@ -126,9 +160,9 @@ export function WelcomeFlow() {
             padding: 18,
             borderRadius: 13,
             cursor: 'pointer',
-            background: c.felt,
+            background: resumeTrip ? c.card : c.felt,
             border: `2px solid ${c.goldBright}`,
-            color: c.ink,
+            color: resumeTrip ? c.felt : c.ink,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center'

@@ -116,18 +116,24 @@ export function MoneyTab({ trip }: { trip: Trip }) {
 
       {lines.length > 0 ? (
         <button
-          className="dt-btn dt-btn-gold"
+          className="dt-btn dt-btn-ghost"
           onClick={postSettleToFeed}
           style={{
             width: '100%',
+            marginTop: 14,
             marginBottom: 14,
-            padding: 12,
+            padding: 14,
             borderRadius: 12,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             gap: 8,
-            fontSize: 13
+            fontSize: 13,
+            fontWeight: 700,
+            letterSpacing: '.06em',
+            border: `1.5px solid ${c.gold}`,
+            background: 'transparent',
+            color: c.gold
           }}
         >
           <Share2 size={16} />

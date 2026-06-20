@@ -64,7 +64,7 @@ Run on your Supabase project SQL editor, in order:
 
 ### Production verification
 
-Run [`scripts/verify-production.sql`](scripts/verify-production.sql) in the SQL editor after migrations. Confirm Stripe webhook receives `checkout.session.completed` on a test payment.
+Run [`scripts/verify-production.sql`](scripts/verify-production.sql) in the SQL editor after migrations. Confirm Stripe webhook receives `checkout.session.completed` on a test payment. After deploy, confirm `https://dalytrips.com/apple-touch-icon.png` loads (iOS home-screen icon).
 
 ### Optional env (Vite)
 

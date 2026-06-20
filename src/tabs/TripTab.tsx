@@ -1,4 +1,5 @@
 import { starterDailyDrop } from '@/lib/starter'
+import { addRoundToTrip } from '@/engine/tripFactory'
 import { buildLeaderboard } from '@/engine/scoring'
 import { useTripStore } from '@/context/TripContext'
 import { RosterEditor, type RosterRow } from '@/components/RosterEditor'
@@ -6,7 +7,7 @@ import type { Trip } from '@/types/trip'
 import { c, formatScore } from '@/styles'
 import { ScoreChip } from '@/components/TabBar'
 import { ShareQr } from '@/components/ShareQr'
-import { MapPin, Play, Trophy, Users } from 'lucide-react'
+import { MapPin, Play, Plus, Trophy, Users } from 'lucide-react'
 import { useMemo, useState } from 'react'
 
 export function TripTab({
@@ -45,6 +46,11 @@ export function TripTab({
         venmo: rows[i]?.venmo ?? p.venmo
       }))
     }))
+  }
+
+  const addRound = () => {
+    const active = trip.rounds[trip.activeRoundIndex] || trip.rounds[0]
+    updateTrip(t => addRoundToTrip(t, active?.course.name || t.location, `Round ${t.rounds.length + 1}`))
   }
 
   return (
@@ -132,10 +138,36 @@ export function TripTab({
             >
               <div className="dt-cond" style={{ fontSize: 10, letterSpacing: '.1em', opacity: 0.7 }}>{r.name}</div>
               <div style={{ fontSize: 12, marginTop: 4, fontWeight: 600 }}>{r.course.name}</div>
-              <div style={{ fontSize: 11, color: c.muted, marginTop: 2 }}>{r.format} · skins {r.sides.skins.on ? '$' + r.sides.skins.stake : 'off'}</div>
+              <div style={{ fontSize: 11, color: c.muted, marginTop: 2 }}>
+                {r.format}
+                {r.sides.skins.on ? ` · skins $${r.sides.skins.stake}` : ''}
+                {r.sides.nassau.on ? ` · nassau $${r.sides.nassau.stake}` : ''}
+              </div>
             </button>
           )
         })}
+        <button
+          type="button"
+          className="dt-btn"
+          onClick={addRound}
+          style={{
+            flex: '0 0 auto',
+            padding: '12px 14px',
+            borderRadius: 14,
+            background: c.card,
+            border: `1.5px dashed ${c.line}`,
+            color: c.gold,
+            minWidth: 88,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 4
+          }}
+        >
+          <Plus size={18} />
+          <span style={{ fontSize: 11, fontWeight: 600 }}>Add</span>
+        </button>
       </div>
     </div>
   )

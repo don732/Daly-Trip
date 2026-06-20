@@ -19,7 +19,8 @@ export function DEFAULT_SIDES(): RoundSides {
     skins: { on: true, stake: 5, carry: true },
     snake: { on: false, stake: 1 },
     ctp: { on: false, stake: 5 },
-    nassau: { on: false, stake: 10 }
+    nassau: { on: false, stake: 10 },
+    press: { on: false, stake: 5 }
   }
 }
 
@@ -52,6 +53,9 @@ export function deriveGames(round: Round): EngineGame[] {
   }
   if (round.sides.nassau.on) {
     games.push({ id: uid('game'), type: 'nassau', label: 'Nassau', stake: round.sides.nassau.stake })
+  }
+  if (round.sides.press.on) {
+    games.push({ id: uid('game'), type: 'press', label: 'Press', stake: round.sides.press.stake })
   }
   return games
 }

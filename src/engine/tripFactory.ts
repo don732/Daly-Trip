@@ -26,6 +26,12 @@ export function makeRound(input: {
   skinsStake?: number
   nassau?: boolean
   nassauStake?: number
+  snake?: boolean
+  snakeStake?: number
+  ctp?: boolean
+  ctpStake?: number
+  press?: boolean
+  pressStake?: number
   teamIds: { pine: string[]; sand: string[] }
 }): Round {
   const sides = DEFAULT_SIDES()
@@ -38,6 +44,18 @@ export function makeRound(input: {
   if (input.nassau) {
     sides.nassau.on = true
     sides.nassau.stake = input.nassauStake ?? 10
+  }
+  if (input.snake) {
+    sides.snake.on = true
+    sides.snake.stake = input.snakeStake ?? 1
+  }
+  if (input.ctp) {
+    sides.ctp.on = true
+    sides.ctp.stake = input.ctpStake ?? 5
+  }
+  if (input.press) {
+    sides.press.on = true
+    sides.press.stake = input.pressStake ?? 5
   }
   const gameStake = DEFAULT_STAKE()
   if (input.stake > 0) {
@@ -92,6 +110,12 @@ export function makeTripFromForm(form: TripFormInput): Trip {
       skinsStake: form.skinsStake,
       nassau: form.nassau,
       nassauStake: form.nassauStake,
+      snake: form.snake,
+      snakeStake: form.snakeStake,
+      ctp: form.ctp,
+      ctpStake: form.ctpStake,
+      press: form.press,
+      pressStake: form.pressStake,
       teamIds
     })
   )
@@ -149,6 +173,42 @@ export function addPlayerToTrip(trip: Trip, nick: string, hcp: number, team?: Te
     scores,
     putts,
     rounds
+  }
+}
+
+export function addRoundToTrip(trip: Trip, courseName: string, name?: string): Trip {
+  const playerIds = trip.players.map(p => p.id)
+  const active = trip.rounds[trip.activeRoundIndex] || trip.rounds[0]
+  const round = makeRound({
+    name: name || `Round ${trip.rounds.length + 1}`,
+    courseName: courseName || active?.course.name || trip.location || 'Round',
+    mode: active?.mode || 'indiv',
+    format: active?.format || 'stroke',
+    playerIds,
+    stake: active?.gameStake.amount || 0,
+    skins: active?.sides.skins.on ?? true,
+    skinsStake: active?.sides.skins.stake,
+    nassau: active?.sides.nassau.on,
+    nassauStake: active?.sides.nassau.stake,
+    snake: active?.sides.snake.on,
+    snakeStake: active?.sides.snake.stake,
+    ctp: active?.sides.ctp.on,
+    ctpStake: active?.sides.ctp.stake,
+    press: active?.sides.press.on,
+    pressStake: active?.sides.press.stake,
+    teamIds: { pine: trip.teams.pine.ids, sand: trip.teams.sand.ids }
+  })
+  const synced = syncRoundFromTrip(trip)
+  const rounds = [...synced.rounds, round]
+  const index = rounds.length - 1
+  return {
+    ...synced,
+    rounds,
+    activeRoundIndex: index,
+    course: round.course,
+    games: round.games,
+    scores: round.scores,
+    putts: round.putts
   }
 }
 

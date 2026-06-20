@@ -53,6 +53,7 @@ export interface RoundSides {
   snake: SideBet
   ctp: SideBet
   nassau: SideBet
+  press: SideBet
 }
 
 export interface TeamSlot {
@@ -171,6 +172,12 @@ export interface TripFormInput {
   skinsStake?: number
   nassau?: boolean
   nassauStake?: number
+  snake?: boolean
+  snakeStake?: number
+  ctp?: boolean
+  ctpStake?: number
+  press?: boolean
+  pressStake?: number
   rounds: Array<{ course: string; name?: string }>
 }
 
@@ -222,6 +229,12 @@ export interface TripBuilderForm {
   skinsStake: number
   nassauOn: boolean
   nassauStake: number
+  snakeOn: boolean
+  snakeStake: number
+  ctpOn: boolean
+  ctpStake: number
+  pressOn: boolean
+  pressStake: number
 }
 
 declare global {

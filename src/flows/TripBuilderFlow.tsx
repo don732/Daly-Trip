@@ -9,6 +9,7 @@ import { makeTripFromForm } from '@/engine/tripFactory'
 import { registerTripOrganizer, pushTripToCloud, getSupabase } from '@/cloudStore'
 import { ensureProfile, getSession } from '@/lib/auth'
 import { recordTripPayment, startCheckout, TRIP_PRICE, verifyCheckout } from '@/lib/checkout'
+import { FORMAT_OPTIONS } from '@/engine/formats'
 import type { Trip, TripBuilderForm } from '@/types/trip'
 import { c, flowInput } from '@/styles'
 const STEPS = ['Players', 'Pay', 'Roster', 'Event Details'] as const
@@ -36,7 +37,13 @@ function defaultForm(): TripBuilderForm {
     skinsOn: true,
     skinsStake: 5,
     nassauOn: false,
-    nassauStake: 10
+    nassauStake: 10,
+    snakeOn: false,
+    snakeStake: 1,
+    ctpOn: false,
+    ctpStake: 5,
+    pressOn: false,
+    pressStake: 5
   }
 }
 
@@ -147,7 +154,6 @@ export function TripBuilderFlow() {
         form.players.length === form.headcount
           ? form.players
           : resizeRoster(form.players, form.headcount)
-      const courseName = form.rounds[0]?.courseName || form.location || form.name || 'Round 1'
       const trip = makeTripFromForm({
         name: form.name.trim(),
         location: form.location,
@@ -162,7 +168,16 @@ export function TripBuilderFlow() {
         skinsStake: form.skinsStake,
         nassau: form.nassauOn,
         nassauStake: form.nassauStake,
-        rounds: [{ course: courseName, name: 'Round 1' }]
+        snake: form.snakeOn,
+        snakeStake: form.snakeStake,
+        ctp: form.ctpOn,
+        ctpStake: form.ctpStake,
+        press: form.pressOn,
+        pressStake: form.pressStake,
+        rounds: form.rounds.map((r, i) => ({
+          course: r.courseName || form.location || form.name || `Round ${i + 1}`,
+          name: r.name || `Round ${i + 1}`
+        }))
       })
       upsertTrip(trip)
       setMyPlayerId(trip.id, trip.players[0].id)
@@ -520,10 +535,53 @@ export function TripBuilderFlow() {
                 setForm(f => ({
                   ...f,
                   location: f.location || name,
-                  rounds: [{ name: 'Round 1', courseName: name }]
+                  rounds: f.rounds.map((r, i) => (i === 0 ? { ...r, courseName: name } : r))
                 }))
               }
             />
+          </div>
+          <div>
+            <div className="dt-cond" style={{ fontSize: 10.5, letterSpacing: '.14em', color: c.gold, fontWeight: 700, marginBottom: 7 }}>
+              ROUNDS
+            </div>
+            {form.rounds.map((r, i) => (
+              <div key={i} style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
+                <input
+                  value={r.name}
+                  onChange={e =>
+                    setForm(f => ({
+                      ...f,
+                      rounds: f.rounds.map((row, j) => (j === i ? { ...row, name: e.target.value } : row))
+                    }))
+                  }
+                  placeholder={`Round ${i + 1}`}
+                  style={{ ...flowInput, flex: 1, marginBottom: 0 }}
+                />
+                {i > 0 ? (
+                  <button
+                    type="button"
+                    className="dt-btn"
+                    onClick={() => setForm(f => ({ ...f, rounds: f.rounds.filter((_, j) => j !== i) }))}
+                    style={{ padding: '8px 12px', borderRadius: 10, border: `1px solid ${c.line}`, background: c.cardDeep, color: c.muted }}
+                  >
+                    ×
+                  </button>
+                ) : null}
+              </div>
+            ))}
+            <button
+              type="button"
+              className="dt-btn"
+              onClick={() =>
+                setForm(f => ({
+                  ...f,
+                  rounds: [...f.rounds, { name: `Round ${f.rounds.length + 1}`, courseName: f.rounds[0]?.courseName || f.location }]
+                }))
+              }
+              style={{ width: '100%', padding: 10, borderRadius: 10, border: `1.5px dashed ${c.line}`, background: 'transparent', color: c.gold, fontSize: 13, marginBottom: 12 }}
+            >
+              + Add round
+            </button>
           </div>
           <div>
             <div className="dt-cond" style={{ fontSize: 10.5, letterSpacing: '.14em', color: c.gold, fontWeight: 700, marginBottom: 7 }}>
@@ -556,42 +614,44 @@ export function TripBuilderFlow() {
               onChange={e => setForm(f => ({ ...f, format: e.target.value as TripBuilderForm['format'] }))}
               style={{ ...flowInput, marginBottom: 10 }}
             >
-              <option value="stroke">Stroke play</option>
-              <option value="bestball">Best ball</option>
-              <option value="scramble">Scramble</option>
-              <option value="alternate">Alternate shot</option>
+              {FORMAT_OPTIONS.map(opt => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.label}
+                </option>
+              ))}
             </select>
           </div>
           <div>
             <div className="dt-cond" style={{ fontSize: 10.5, letterSpacing: '.14em', color: c.gold, fontWeight: 700, marginBottom: 7 }}>
               GAMES
             </div>
-            <label style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8, fontSize: 13, color: c.cream }}>
-              <input type="checkbox" checked={form.skinsOn} onChange={e => setForm(f => ({ ...f, skinsOn: e.target.checked }))} />
-              Skins
-              {form.skinsOn ? (
+            {(
+              [
+                { key: 'skinsOn' as const, stakeKey: 'skinsStake' as const, label: 'Skins', defaultStake: 5 },
+                { key: 'nassauOn' as const, stakeKey: 'nassauStake' as const, label: 'Nassau (front / back / overall)', defaultStake: 10 },
+                { key: 'pressOn' as const, stakeKey: 'pressStake' as const, label: 'Press (2× back nine)', defaultStake: 5 },
+                { key: 'snakeOn' as const, stakeKey: 'snakeStake' as const, label: 'Snake (3-putts)', defaultStake: 1 },
+                { key: 'ctpOn' as const, stakeKey: 'ctpStake' as const, label: 'CTP (par 3s)', defaultStake: 5 }
+              ] as const
+            ).map(({ key, stakeKey, label, defaultStake }) => (
+              <label key={key} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8, fontSize: 13, color: c.cream }}>
                 <input
-                  type="number"
-                  min={1}
-                  value={form.skinsStake}
-                  onChange={e => setForm(f => ({ ...f, skinsStake: Number(e.target.value) || 5 }))}
-                  style={{ ...flowInput, width: 72, marginBottom: 0, padding: '6px 8px' }}
+                  type="checkbox"
+                  checked={form[key]}
+                  onChange={e => setForm(f => ({ ...f, [key]: e.target.checked }))}
                 />
-              ) : null}
-            </label>
-            <label style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 13, color: c.cream }}>
-              <input type="checkbox" checked={form.nassauOn} onChange={e => setForm(f => ({ ...f, nassauOn: e.target.checked }))} />
-              Nassau (front / back / overall)
-              {form.nassauOn ? (
-                <input
-                  type="number"
-                  min={1}
-                  value={form.nassauStake}
-                  onChange={e => setForm(f => ({ ...f, nassauStake: Number(e.target.value) || 10 }))}
-                  style={{ ...flowInput, width: 72, marginBottom: 0, padding: '6px 8px' }}
-                />
-              ) : null}
-            </label>
+                {label}
+                {form[key] ? (
+                  <input
+                    type="number"
+                    min={1}
+                    value={form[stakeKey]}
+                    onChange={e => setForm(f => ({ ...f, [stakeKey]: Number(e.target.value) || defaultStake }))}
+                    style={{ ...flowInput, width: 72, marginBottom: 0, padding: '6px 8px' }}
+                  />
+                ) : null}
+              </label>
+            ))}
           </div>
           <div style={{ marginTop: 8, display: 'flex', gap: 10 }}>
             <button

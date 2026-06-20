@@ -1,5 +1,5 @@
-import type { LeaderRow, Trip } from '@/types/trip'
-import { computeSkins } from '@/engine/scoring'
+import type { LeaderRow, Player, Trip } from '@/types/trip'
+import { buildLeaderboard, computeSkins } from '@/engine/scoring'
 import { formatScore } from '@/styles'
 
 const STARTER_API = import.meta.env.VITE_STARTER_API_URL as string | undefined
@@ -11,6 +11,45 @@ const ROAST_LINES = [
   'If sand saves were currency, you would be broke.',
   'You putt like the hole owes you money.'
 ]
+
+function formatToPar(n: number): string {
+  if (n > 0) return `+${n}`
+  if (n === 0) return 'E'
+  return String(n)
+}
+
+export function buildTripContext(trip: Trip, leaders?: LeaderRow[]): string {
+  const board = leaders || buildLeaderboard(trip)
+  const top = [...board].sort((a, b) => a.toParNet - b.toParNet).slice(0, 6)
+  const leaderLines = top
+    .map((l, i) => `${i + 1}. ${l.nick} net ${formatToPar(l.toParNet)} / gross ${formatToPar(l.toPar)}`)
+    .join('; ')
+  const roster = trip.players.map(p => `${p.nick} (hcp ${p.hcp})`).join(', ')
+  const skins = computeSkins(trip)
+  return `Trip: ${trip.name}${trip.location ? ` at ${trip.location}` : ''}. Players: ${roster}. Net leaderboard: ${leaderLines || 'no scores yet'}. Skins pot $${skins.pot}${skins.carry ? `, ${skins.carry} hole(s) carrying` : ''}.`
+}
+
+function keywordReply(last: string, trip?: Trip, leaders?: LeaderRow[]): string | null {
+  const board = leaders || (trip ? buildLeaderboard(trip) : [])
+  const netLead = [...board].sort((a, b) => a.toParNet - b.toParNet)[0]
+  const grossLead = [...board].sort((a, b) => a.toPar - b.toPar)[0]
+
+  if (/roast/.test(last)) {
+    return `${ROAST_LINES[Math.floor(Math.random() * ROAST_LINES.length)]} — The Starter on Daly Trips ⛳`
+  }
+  if (/win|lead|first|board/.test(last) && netLead) {
+    return `${netLead.nick} leads net at ${formatToPar(netLead.toParNet)}. ${grossLead?.nick || 'Someone'} is your gross leader. Dr. Sandbag's "net" lead remains under formal review. — The Starter`
+  }
+  if (/team|pair|fair/.test(last) && trip) {
+    const pine = trip.players.filter(p => p.team === 'pine').map(p => `${p.nick} (${p.hcp})`).join(' + ')
+    const sand = trip.players.filter(p => p.team === 'sand').map(p => `${p.nick} (${p.hcp})`).join(' + ')
+    return `Fairest teams by handicap: Pine — ${pine || 'TBD'}. Sand — ${sand || 'TBD'}. Classic Ryder setup. — The Starter`
+  }
+  if (/settle|money|venmo|pay/.test(last)) {
+    return 'The ledger is sacred. Settle like adults — or let Venmo be the witness. — The Starter'
+  }
+  return null
+}
 
 async function callStarterApi(input: {
   history: Array<{ role: string; content: string }>
@@ -31,30 +70,37 @@ async function callStarterApi(input: {
   }
 }
 
-function keywordReply(last: string): string | null {
-  if (/roast/.test(last)) {
-    return `${ROAST_LINES[Math.floor(Math.random() * ROAST_LINES.length)]} — The Starter on Daly Trips ⛳`
-  }
-  if (/win|lead|first|board/.test(last)) {
-    return 'Net leaders are shifting every hole. Gross is a different movie entirely. Dr. Sandbag\'s card remains under review. — The Starter'
-  }
-  if (/team|pair|fair/.test(last)) {
-    return 'Fairest teams by handicap: Pine stacks low numbers. Sand brings the firepower. Classic Ryder setup. — The Starter'
-  }
-  if (/settle|money|venmo|pay/.test(last)) {
-    return 'The ledger is sacred. Settle like adults — or let Venmo be the witness. — The Starter'
-  }
-  return null
-}
-
 export async function askStarter(input: {
   history: Array<{ role: string; content: string }>
   context?: string
+  trip?: Trip
 }): Promise<string | null> {
   const api = await callStarterApi(input)
   if (api) return api
   const last = input.history[input.history.length - 1]?.content.toLowerCase() || ''
-  return keywordReply(last)
+  const leaders = input.trip ? buildLeaderboard(input.trip) : undefined
+  return keywordReply(last, input.trip, leaders)
+}
+
+function fallbackRoast(player: Player, trip?: Trip, leaders?: LeaderRow[]): string {
+  const row = leaders?.find(l => l.id === player.id)
+  const line = ROAST_LINES[Math.floor(Math.random() * ROAST_LINES.length)]
+  const nick = player.nick.split(' ').pop() || player.nick
+  const scoreBit = row?.thru ? ` through ${row.thru} at ${formatToPar(row.toParNet)} net` : ''
+  return `${nick}${scoreBit}: ${line}${player.weakness ? ` (${player.weakness})` : ''} — The Starter on Daly Trips ⛳`
+}
+
+export async function generateRoastAsync(player: Player, trip: Trip): Promise<string> {
+  const leaders = buildLeaderboard(trip)
+  const row = leaders.find(l => l.id === player.id)
+  const prompt = `Roast ${player.nick} in 2-3 cutting but good-natured sentences for the group chat. Weakness: ${player.weakness || 'unknown'}. Biggest choke: ${player.choke || 'unknown'}. Handicap ${player.hcp}. In character as The Starter. Respond with ONLY the roast.`
+  const context = `Player ${player.nick}, handicap ${player.hcp}, this round ${row ? formatToPar(row.toParNet) + ' net' : 'no scores'}.`
+  const api = await callStarterApi({
+    history: [{ role: 'me', content: prompt }],
+    context
+  })
+  if (api) return api.endsWith('⛳') || api.includes('Starter') ? api : `${api} — The Starter on Daly Trips ⛳`
+  return fallbackRoast(player, trip, leaders)
 }
 
 export function generateRoast(playerNick: string, trip?: Trip): string {

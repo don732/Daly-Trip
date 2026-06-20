@@ -1,8 +1,9 @@
+import { useState } from 'react'
 import { buildLeaderboard } from '@/engine/scoring'
-import { generateRoast } from '@/lib/starter'
+import { generateRoastAsync } from '@/lib/starter'
 import type { Player, Trip } from '@/types/trip'
 import { c, formatScore } from '@/styles'
-import { X } from 'lucide-react'
+import { Flame, X } from 'lucide-react'
 
 export function PlayerProfile({
   player,
@@ -15,12 +16,23 @@ export function PlayerProfile({
   onClose: () => void
   onRoast?: (body: string) => void
 }) {
+  const [cooking, setCooking] = useState(false)
+  const [roastText, setRoastText] = useState<string | null>(null)
   const leaders = buildLeaderboard(trip)
   const row = leaders.find(l => l.id === player.id)
+  const roastLabel = (player.nick.split(' ').pop() || player.nick).toUpperCase()
 
-  const roast = () => {
-    if (!onRoast) return
-    onRoast(generateRoast(player.nick, trip))
+  const roast = async () => {
+    if (!onRoast || cooking) return
+    setCooking(true)
+    setRoastText(null)
+    try {
+      const body = await generateRoastAsync(player, trip)
+      setRoastText(body)
+      onRoast(body)
+    } finally {
+      setCooking(false)
+    }
   }
 
   return (
@@ -43,7 +55,10 @@ export function PlayerProfile({
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
           <div>
             <h3 style={{ margin: 0, fontSize: 22, color: c.cream }}>{player.nick}</h3>
-            <p style={{ margin: '4px 0 0', color: c.muted, fontSize: 13 }}>{player.name} · HCP {player.hcp}</p>
+            <p style={{ margin: '4px 0 0', color: c.muted, fontSize: 13 }}>
+              {player.name} · HCP {player.hcp}
+              {player.club ? ` · ${player.club}` : ''}
+            </p>
           </div>
           <button className="dt-btn" onClick={onClose} style={{ background: 'none', border: 'none', color: c.cream }}>
             <X size={20} />
@@ -60,6 +75,8 @@ export function PlayerProfile({
         {player.weakness ? <Row label="Weakness" value={player.weakness} /> : null}
         {player.choke ? <Row label="Biggest choke" value={player.choke} /> : null}
         {player.record ? <Row label="Record" value={player.record} /> : null}
+        {player.winnings != null ? <Row label="Lifetime winnings" value={`$${player.winnings.toLocaleString()}`} /> : null}
+        {player.rival ? <Row label="Rival" value={player.rival} /> : null}
         {player.venmo ? <Row label="Venmo" value={player.venmo} /> : null}
         {player.badges?.length ? (
           <div style={{ marginTop: 12, display: 'flex', flexWrap: 'wrap', gap: 6 }}>
@@ -70,23 +87,47 @@ export function PlayerProfile({
             ))}
           </div>
         ) : null}
+        {roastText ? (
+          <div
+            style={{
+              marginTop: 16,
+              padding: 14,
+              borderRadius: 12,
+              background: 'rgba(210,96,73,.08)',
+              border: `1px solid ${c.red}`,
+              fontSize: 14,
+              color: c.cream,
+              lineHeight: 1.5,
+              fontStyle: 'italic'
+            }}
+          >
+            &quot;{roastText}&quot;
+          </div>
+        ) : null}
         {onRoast ? (
           <button
             className="dt-btn dt-glow dt-press"
             onClick={roast}
+            disabled={cooking}
             style={{
               width: '100%',
               marginTop: 20,
-              padding: 14,
+              padding: 12,
               borderRadius: 12,
-              cursor: 'pointer',
-              background: c.felt,
-              border: `2px solid ${c.goldBright}`,
-              color: c.ink
+              cursor: cooking ? 'default' : 'pointer',
+              opacity: cooking ? 0.6 : 1,
+              background: 'rgba(210,96,73,.14)',
+              border: `1px solid ${c.red}`,
+              color: '#E8917E',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 8
             }}
           >
-            <span className="dt-cond" style={{ fontSize: 13, fontWeight: 800, letterSpacing: '.06em' }}>
-              ROAST {player.nick.toUpperCase()}
+            <Flame size={15} />
+            <span className="dt-cond" style={{ fontSize: 12.5, fontWeight: 700, letterSpacing: '.05em' }}>
+              {cooking ? 'THE STARTER IS COOKING…' : `ROAST ${roastLabel}`}
             </span>
           </button>
         ) : null}

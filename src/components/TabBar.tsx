@@ -23,36 +23,50 @@ export function TabBar({
         transform: 'translateX(-50%)',
         width: '100%',
         maxWidth: 480,
-        background: `linear-gradient(180deg, transparent, ${c.bg}ee 24%)`,
-        padding: '8px 12px calc(10px + env(safe-area-inset-bottom))',
-        display: 'flex',
-        gap: 4,
-        zIndex: 50
+        zIndex: 50,
+        paddingBottom: 'env(safe-area-inset-bottom)'
       }}
     >
-      {tabs.map(tab => {
-        const on = tab.id === active
-        return (
-          <button
-            key={tab.id}
-            className="dt-btn dt-tab"
-            onClick={() => onChange(tab.id)}
-            style={{
-              flex: 1,
-              padding: '10px 4px',
-              borderRadius: 12,
-              background: on ? 'rgba(184,144,58,.14)' : 'transparent',
-              border: on ? `1px solid ${c.goldDim}` : '1px solid transparent',
-              color: on ? c.gold : c.muted,
-              fontSize: 11,
-              fontWeight: 700,
-              letterSpacing: '.06em'
-            }}
-          >
-            {tab.label}
-          </button>
-        )
-      })}
+      <div
+        style={{
+          margin: '0 10px 10px',
+          padding: '6px 8px',
+          borderRadius: 16,
+          background: 'rgba(245,243,238,.92)',
+          backdropFilter: 'blur(12px)',
+          WebkitBackdropFilter: 'blur(12px)',
+          border: `1px solid ${c.line}`,
+          boxShadow: '0 -4px 24px rgba(13,31,60,.08)',
+          display: 'flex',
+          gap: 4
+        }}
+      >
+        {tabs.map(tab => {
+          const on = tab.id === active
+          return (
+            <button
+              key={tab.id}
+              className="dt-btn dt-tab"
+              onClick={() => onChange(tab.id)}
+              style={{
+                flex: 1,
+                padding: '10px 4px 9px',
+                borderRadius: 12,
+                background: on ? c.surfaceGold : 'transparent',
+                border: on ? `1px solid ${c.goldDim}` : '1px solid transparent',
+                color: on ? c.gold : c.muted,
+                fontSize: 10,
+                fontWeight: 800,
+                letterSpacing: '.08em',
+                textTransform: 'uppercase',
+                transition: 'background .15s, color .15s, border-color .15s'
+              }}
+            >
+              {tab.label}
+            </button>
+          )
+        })}
+      </div>
     </div>
   )
 }

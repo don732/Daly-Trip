@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { askStarter } from '@/lib/starter'
+import { askStarter, buildTripContext } from '@/lib/starter'
 import type { Trip } from '@/types/trip'
 import { buildLeaderboard } from '@/engine/scoring'
 import { c } from '@/styles'
@@ -20,9 +20,12 @@ export function StarterChat({ trip, onClose }: { trip: Trip; onClose: () => void
     setMessages(next)
     setLoading(true)
     const leaders = buildLeaderboard(trip)
-    const top = leaders.sort((a, b) => a.toParNet - b.toParNet)[0]
-    const context = `Trip ${trip.name}. Leader: ${top?.nick || 'none'}.`
-    const reply = await askStarter({ history: [{ role: 'me', content: text }], context })
+    const context = buildTripContext(trip, leaders)
+    const reply = await askStarter({
+      history: next.filter(m => m.role === 'me').map(m => ({ role: 'me', content: m.text })),
+      context,
+      trip
+    })
     setMessages([...next, { role: 'starter', text: reply || 'The committee is reviewing the tape. Check the Board tab for live numbers. — The Starter ⛳' }])
     setLoading(false)
   }
