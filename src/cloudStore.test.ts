@@ -109,6 +109,21 @@ describe('cloudStore', () => {
     })
   })
 
+  it('registerTripOrganizer throws when RPC fails', async () => {
+    mockRpc.mockResolvedValue({ data: null, error: { message: 'rpc failed' } })
+    const { registerTripOrganizer } = await loadCloudStore()
+    await expect(registerTripOrganizer('trip-1', 'player-1')).rejects.toEqual({ message: 'rpc failed' })
+  })
+
+  it('pushTripToCloud throws when session is missing', async () => {
+    const { getSession } = await import('@/lib/auth')
+    vi.mocked(getSession).mockResolvedValueOnce(null)
+    const trip = createTestTrip()
+    const { pushTripToCloud, getSyncState } = await loadCloudStore()
+    await expect(pushTripToCloud(trip)).rejects.toThrow('Sign in required to sync trip')
+    expect(getSyncState().state).toBe('error')
+  })
+
   it('transitions sync state from syncing to live on successful push', async () => {
     const trip = createTestTrip()
     const { pushTripToCloud, getSyncState, onSyncStateChange } = await loadCloudStore()

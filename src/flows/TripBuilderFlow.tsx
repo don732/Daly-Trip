@@ -4,8 +4,8 @@ import { Minus, Plus, X } from 'lucide-react'
 import { AuthGate } from '@/components/AuthGate'
 import { useTripStore } from '@/context/TripContext'
 import { makeTripFromForm } from '@/engine/tripFactory'
-import { registerTripOrganizer } from '@/cloudStore'
-import { getSession } from '@/lib/auth'
+import { registerTripOrganizer, pushTripToCloud, getSupabase } from '@/cloudStore'
+import { ensureProfile, getSession } from '@/lib/auth'
 import { recordTripPayment, startCheckout, TRIP_PRICE, verifyCheckout } from '@/lib/checkout'
 import type { TeamKey, Trip, TripBuilderForm } from '@/types/trip'
 import { c, flowInput } from '@/styles'
@@ -81,6 +81,8 @@ export function TripBuilderFlow() {
   const [createdTrip, setCreatedTrip] = useState<Trip | null>(null)
   const [invited, setInvited] = useState(false)
   const [starterLine, setStarterLine] = useState('')
+  const [creating, setCreating] = useState(false)
+  const [createError, setCreateError] = useState('')
 
   useEffect(() => {
     const status = searchParams.get('checkout')
@@ -126,41 +128,62 @@ export function TripBuilderFlow() {
   }
 
   const createTrip = async () => {
-    const players = Array.from({ length: form.headcount }, (_, i) => ({
-      nick: i === 0 ? 'Organizer' : `Player ${i + 1}`,
-      hcp: 18,
-      team: (i % 2 === 0 ? 'pine' : 'sand') as TeamKey,
-      venmo: ''
-    }))
-    const trip = makeTripFromForm({
-      name: form.name.trim(),
-      location: form.location,
-      start: form.start,
-      end: form.end,
-      players,
-      paid,
-      mode: form.mode,
-      gameFormat: form.format,
-      stake: form.stake,
-      skins: form.skinsOn,
-      skinsStake: form.skinsStake,
-      rounds: [{ course: form.location || form.name || 'Round 1', name: 'Round 1' }]
-    })
-    upsertTrip(trip)
-    await registerTripOrganizer(trip.id, trip.players[0].id)
-    setMyPlayerId(trip.id, trip.players[0].id)
-    if (paid) {
-      const session = await getSession()
-      await recordTripPayment({
-        tripId: trip.id,
-        userId: session?.user?.id || null,
-        amount: form.headcount * TRIP_PRICE,
-        sessionId: checkoutSessionId || `local_${trip.id}`,
-        status: 'paid'
+    setCreating(true)
+    setCreateError('')
+    try {
+      const players = Array.from({ length: form.headcount }, (_, i) => ({
+        nick: i === 0 ? 'Organizer' : `Player ${i + 1}`,
+        hcp: 18,
+        team: (i % 2 === 0 ? 'pine' : 'sand') as TeamKey,
+        venmo: ''
+      }))
+      const trip = makeTripFromForm({
+        name: form.name.trim(),
+        location: form.location,
+        start: form.start,
+        end: form.end,
+        players,
+        paid,
+        mode: form.mode,
+        gameFormat: form.format,
+        stake: form.stake,
+        skins: form.skinsOn,
+        skinsStake: form.skinsStake,
+        rounds: [{ course: form.location || form.name || 'Round 1', name: 'Round 1' }]
       })
+      upsertTrip(trip)
+      setMyPlayerId(trip.id, trip.players[0].id)
+
+      if (getSupabase()) {
+        const session = await getSession()
+        if (!session?.user?.id) {
+          throw new Error('Sign in required to create a synced trip')
+        }
+        await ensureProfile(session.user.id, session.user.email)
+        await pushTripToCloud(trip)
+        await registerTripOrganizer(trip.id, trip.players[0].id)
+        if (paid) {
+          await recordTripPayment({
+            tripId: trip.id,
+            userId: session.user.id,
+            amount: form.headcount * TRIP_PRICE,
+            sessionId: checkoutSessionId || `local_${trip.id}`,
+            status: 'paid'
+          })
+        }
+      }
+
+      setCreatedTrip(trip)
+      setStep(3)
+    } catch (err) {
+      const message =
+        err && typeof err === 'object' && 'message' in err
+          ? String((err as { message: string }).message)
+          : 'Could not create trip'
+      setCreateError(message)
+    } finally {
+      setCreating(false)
     }
-    setCreatedTrip(trip)
-    setStep(3)
   }
 
   const handlePay = async () => {
@@ -460,24 +483,27 @@ export function TripBuilderFlow() {
             </button>
             <button
               onClick={createTrip}
-              disabled={!canCreate}
+              disabled={!canCreate || creating}
               className="dt-btn dt-glow dt-press"
               style={{
                 flex: 1,
                 padding: 15,
                 borderRadius: 14,
-                cursor: 'pointer',
+                cursor: canCreate && !creating ? 'pointer' : 'default',
                 background: canCreate ? c.gold : 'rgba(154,124,26,.3)',
                 border: 'none',
                 color: canCreate ? c.creamSoft : 'rgba(7,18,12,.5)',
-                opacity: canCreate ? 1 : 0.7
+                opacity: canCreate && !creating ? 1 : 0.7
               }}
             >
               <span className="dt-cond" style={{ fontSize: 14.5, fontWeight: 800, letterSpacing: '.04em' }}>
-                CREATE EVENT
+                {creating ? 'CREATING…' : 'CREATE EVENT'}
               </span>
             </button>
           </div>
+          {createError ? (
+            <p style={{ margin: '12px 0 0', fontSize: 12, color: c.red, textAlign: 'center' }}>{createError}</p>
+          ) : null}
         </div>
       ) : null}
 

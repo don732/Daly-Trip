@@ -68,6 +68,11 @@ export async function pushTripToCloud(trip: Trip): Promise<void> {
   }
   setSyncState('syncing', null)
   const session = await getSession()
+  if (!session?.user?.id) {
+    const message = 'Sign in required to sync trip'
+    setSyncState('error', message)
+    throw new Error(message)
+  }
   const { error } = await sb.from('trips').upsert({
     id: trip.id,
     code: trip.code,
@@ -78,7 +83,7 @@ export async function pushTripToCloud(trip: Trip): Promise<void> {
     paid: trip.paid,
     seed: trip.seed,
     price: trip.price,
-    organizer_id: session?.user?.id ?? null,
+    organizer_id: session.user.id,
     active_round_id: activeRoundId(trip),
     document: trip,
     updated_at: new Date().toISOString()
@@ -99,7 +104,10 @@ export async function registerTripOrganizer(tripId: string, playerId: string): P
     p_trip_id: tripId,
     p_player_id: playerId
   })
-  if (error) setSyncState('error', error.message)
+  if (error) {
+    setSyncState('error', error.message)
+    throw error
+  }
 }
 
 const debouncedPush = debounce((trip: Trip) => {
