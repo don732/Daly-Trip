@@ -67,7 +67,8 @@ describe('cloudStore', () => {
         id: trip.id,
         organizer_id: 'user-abc-123',
         document: trip
-      })
+      }),
+      { onConflict: 'id' }
     )
   })
 
