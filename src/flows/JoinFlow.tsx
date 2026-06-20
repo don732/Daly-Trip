@@ -73,6 +73,7 @@ export function JoinFlow() {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [phase, setPhase] = useState<Phase>('invite')
+  const [addNew, setAddNew] = useState(false)
   const [starterLine] = useState(() => STARTER_LINES[Math.floor(Math.random() * STARTER_LINES.length)])
 
   const refreshPreview = useCallback(
@@ -101,6 +102,7 @@ export function JoinFlow() {
   }, [code, refreshPreview])
 
   const pickPlayer = (player: JoinPreview['players'][number]) => {
+    setAddNew(false)
     setClaimed({
       id: player.id,
       nick: player.nick,
@@ -147,7 +149,8 @@ export function JoinFlow() {
       nick: nick.trim(),
       hcp: Number(hcp) || 18,
       venmo: venmo.trim(),
-      claimPlayerId: claimed?.id
+      claimPlayerId: claimed?.id,
+      addNew
     })
     setLoading(false)
     if (found) navigate(`/trip/${found.id}`)
@@ -361,6 +364,7 @@ export function JoinFlow() {
               className="dt-btn"
               onClick={() => {
                 setClaimed(null)
+                setAddNew(true)
                 setNick('')
                 setHcp('18')
                 setVenmo('')

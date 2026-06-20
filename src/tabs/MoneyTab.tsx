@@ -1,12 +1,13 @@
 import { useMemo, useState, type CSSProperties } from 'react'
 import { computeSettlements, tripSkinsPot } from '@/engine/money'
 import { useTripStore } from '@/context/TripContext'
+import { generateSettleFeedPost } from '@/lib/starter'
 import type { Trip } from '@/types/trip'
 import { c } from '@/styles'
-import { DollarSign, Plus } from 'lucide-react'
+import { DollarSign, Plus, Share2 } from 'lucide-react'
 
 export function MoneyTab({ trip }: { trip: Trip }) {
-  const { addSideBet } = useTripStore()
+  const { addSideBet, addFeedPost, getMyPlayerId } = useTripStore()
   const lines = useMemo(() => computeSettlements(trip), [trip])
   const total = lines.reduce((s, l) => s + l.amount, 0)
   const nick = (id: string) => trip.players.find(p => p.id === id)?.nick || id
@@ -15,6 +16,13 @@ export function MoneyTab({ trip }: { trip: Trip }) {
   const [toId, setToId] = useState(trip.players[1]?.id || '')
   const [amount, setAmount] = useState(10)
   const [note, setNote] = useState('Side bet')
+  const myPlayerId = getMyPlayerId(trip.id) || trip.players[0]?.id || 'starter'
+  const myNick = trip.players.find(p => p.id === myPlayerId)?.nick || 'The Starter'
+
+  const postSettleToFeed = () => {
+    const body = generateSettleFeedPost(trip, lines)
+    addFeedPost(body, myPlayerId, myNick)
+  }
 
   const submitBet = () => {
     if (!fromId || !toId || fromId === toId || amount <= 0) return
@@ -106,7 +114,28 @@ export function MoneyTab({ trip }: { trip: Trip }) {
         </div>
       )}
 
-      <div className="dt-card" style={{ padding: 14, marginTop: 14 }}>
+      {lines.length > 0 ? (
+        <button
+          className="dt-btn dt-btn-gold"
+          onClick={postSettleToFeed}
+          style={{
+            width: '100%',
+            marginBottom: 14,
+            padding: 12,
+            borderRadius: 12,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 8,
+            fontSize: 13
+          }}
+        >
+          <Share2 size={16} />
+          POST TO THE FEED
+        </button>
+      ) : null}
+
+      <div className="dt-card" style={{ padding: 14, marginTop: lines.length > 0 ? 0 : 14 }}>
         <div className="dt-cond" style={{ fontSize: 10, letterSpacing: '.12em', color: c.muted, textTransform: 'uppercase', marginBottom: 10 }}>
           Venmo handles
         </div>

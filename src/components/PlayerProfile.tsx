@@ -1,11 +1,27 @@
 import { buildLeaderboard } from '@/engine/scoring'
+import { generateRoast } from '@/lib/starter'
 import type { Player, Trip } from '@/types/trip'
 import { c, formatScore } from '@/styles'
 import { X } from 'lucide-react'
 
-export function PlayerProfile({ player, trip, onClose }: { player: Player; trip: Trip; onClose: () => void }) {
+export function PlayerProfile({
+  player,
+  trip,
+  onClose,
+  onRoast
+}: {
+  player: Player
+  trip: Trip
+  onClose: () => void
+  onRoast?: (body: string) => void
+}) {
   const leaders = buildLeaderboard(trip)
   const row = leaders.find(l => l.id === player.id)
+
+  const roast = () => {
+    if (!onRoast) return
+    onRoast(generateRoast(player.nick, trip))
+  }
 
   return (
     <div style={{ position: 'fixed', inset: 0, zIndex: 120, background: 'rgba(0,0,0,.8)' }} onClick={onClose}>
@@ -53,6 +69,26 @@ export function PlayerProfile({ player, trip, onClose }: { player: Player; trip:
               </span>
             ))}
           </div>
+        ) : null}
+        {onRoast ? (
+          <button
+            className="dt-btn dt-glow dt-press"
+            onClick={roast}
+            style={{
+              width: '100%',
+              marginTop: 20,
+              padding: 14,
+              borderRadius: 12,
+              cursor: 'pointer',
+              background: c.felt,
+              border: `2px solid ${c.goldBright}`,
+              color: c.ink
+            }}
+          >
+            <span className="dt-cond" style={{ fontSize: 13, fontWeight: 800, letterSpacing: '.06em' }}>
+              ROAST {player.nick.toUpperCase()}
+            </span>
+          </button>
         ) : null}
       </div>
     </div>

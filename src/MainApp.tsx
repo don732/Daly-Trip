@@ -211,7 +211,17 @@ export function MainApp() {
 
         {clubhouseOpen ? <ClubhousePanel onClose={() => setClubhouseOpen(false)} /> : null}
         {starterOpen ? <StarterChat trip={trip} onClose={() => setStarterOpen(false)} /> : null}
-        {profilePlayer ? <PlayerProfile player={profilePlayer} trip={trip} onClose={() => setProfilePlayer(null)} /> : null}
+        {profilePlayer ? (
+          <PlayerProfile
+            player={profilePlayer}
+            trip={trip}
+            onClose={() => setProfilePlayer(null)}
+            onRoast={body => {
+              addFeedPost(body, 'starter', 'The Starter')
+              setProfilePlayer(null)
+            }}
+          />
+        ) : null}
         {movieOpen ? <HighlightReel trip={trip} onClose={() => setMovieOpen(false)} /> : null}
         {menuOpen ? (
           <div style={{ position: 'fixed', inset: 0, zIndex: 100, background: 'rgba(0,0,0,.75)' }} onClick={() => setMenuOpen(false)}>

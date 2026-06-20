@@ -1,8 +1,17 @@
 import { useAuth } from '@/context/AuthContext'
 import { OtpInput } from '@/components/OtpInput'
-import { signInWithEmailOtp, verifyEmailOtp } from '@/lib/auth'
+import {
+  formatPhoneLabel,
+  phoneAuthEnabled,
+  signInWithEmailOtp,
+  signInWithPhoneOtp,
+  verifyEmailOtp,
+  verifyPhoneOtp
+} from '@/lib/auth'
 import { c, flowInput } from '@/styles'
 import { useCallback, useRef, useState } from 'react'
+
+type AuthMethod = 'email' | 'phone'
 
 export function AuthPanel({
   required = false,
@@ -13,23 +22,31 @@ export function AuthPanel({
   title?: string
   subtitle?: string
 }) {
-  const { configured, userId, email, refresh } = useAuth()
+  const { configured, userId, email, session, refresh } = useAuth()
+  const phoneEnabled = phoneAuthEnabled()
+  const [method, setMethod] = useState<AuthMethod>('email')
   const [inputEmail, setInputEmail] = useState('')
+  const [inputPhone, setInputPhone] = useState('')
   const [token, setToken] = useState('')
-  const [step, setStep] = useState<'email' | 'otp'>('email')
+  const [step, setStep] = useState<'input' | 'otp'>('input')
   const [message, setMessage] = useState('')
   const [busy, setBusy] = useState(false)
   const [shake, setShake] = useState(false)
   const verifyingRef = useRef(false)
 
+  const contact = method === 'email' ? inputEmail.trim() : inputPhone.trim()
+
   const confirmOtp = useCallback(
     async (code: string) => {
       const trimmed = code.trim()
-      if (trimmed.length !== 6 || verifyingRef.current) return
+      if (trimmed.length !== 6 || verifyingRef.current || !contact) return
       verifyingRef.current = true
       setBusy(true)
       setMessage('')
-      const { error } = await verifyEmailOtp(inputEmail.trim(), trimmed)
+      const { error } =
+        method === 'email'
+          ? await verifyEmailOtp(contact, trimmed)
+          : await verifyPhoneOtp(contact, trimmed)
       setBusy(false)
       verifyingRef.current = false
       if (error) {
@@ -42,24 +59,26 @@ export function AuthPanel({
       await refresh()
       setMessage('')
     },
-    [inputEmail, refresh]
+    [contact, method, refresh]
   )
 
   if (!configured) return null
 
   if (userId) {
+    const label = email || formatPhoneLabel(session?.user?.phone) || 'account linked'
     return (
       <div className="dt-card" style={{ padding: 14, fontSize: 13, color: c.muted }}>
-        Signed in · {email || 'account linked'}
+        Signed in · {label}
       </div>
     )
   }
 
   const sendOtp = async () => {
-    if (!inputEmail.trim()) return
+    if (!contact) return
     setBusy(true)
     setMessage('')
-    const { error } = await signInWithEmailOtp(inputEmail.trim())
+    const { error } =
+      method === 'email' ? await signInWithEmailOtp(contact) : await signInWithPhoneOtp(contact)
     setBusy(false)
     if (error) {
       setMessage(error.message)
@@ -67,7 +86,7 @@ export function AuthPanel({
     }
     setToken('')
     setStep('otp')
-    setMessage('Code sent — check your email')
+    setMessage(method === 'email' ? 'Code sent — check your email' : 'Code sent — check your texts')
   }
 
   const successMessage = message.includes('sent') || message.includes('Verifying')
@@ -87,20 +106,64 @@ export function AuthPanel({
         {required ? 'Required' : 'Optional'}
       </div>
       <div className="dt-display" style={{ fontSize: 22, fontWeight: 900, color: c.creamSoft, marginBottom: 6 }}>
-        {title}
+        {phoneEnabled && method === 'phone' ? 'Sign in with phone' : title}
       </div>
-      <div style={{ fontSize: 13, color: c.muted, marginBottom: 20, lineHeight: 1.5 }}>{subtitle}</div>
-      {step === 'email' ? (
-        <input
-          type="email"
-          value={inputEmail}
-          onChange={e => setInputEmail(e.target.value)}
-          onKeyDown={e => {
-            if (e.key === 'Enter') sendOtp()
-          }}
-          placeholder="you@example.com"
-          style={flowInput}
-        />
+      <div style={{ fontSize: 13, color: c.muted, marginBottom: 20, lineHeight: 1.5 }}>
+        {phoneEnabled && method === 'phone'
+          ? 'We text a one-time code when SMS auth is enabled in Supabase (Twilio).'
+          : subtitle}
+      </div>
+      {phoneEnabled && step === 'input' ? (
+        <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
+          {(['email', 'phone'] as const).map(m => (
+            <button
+              key={m}
+              type="button"
+              onClick={() => {
+                setMethod(m)
+                setMessage('')
+              }}
+              className="dt-btn"
+              style={{
+                flex: 1,
+                padding: 8,
+                borderRadius: 10,
+                cursor: 'pointer',
+                border: `1.5px solid ${method === m ? c.gold : c.line}`,
+                background: method === m ? 'rgba(201,162,75,.12)' : c.cardDeep,
+                color: c.cream,
+                fontSize: 12
+              }}
+            >
+              {m === 'email' ? 'Email' : 'SMS'}
+            </button>
+          ))}
+        </div>
+      ) : null}
+      {step === 'input' ? (
+        method === 'email' ? (
+          <input
+            type="email"
+            value={inputEmail}
+            onChange={e => setInputEmail(e.target.value)}
+            onKeyDown={e => {
+              if (e.key === 'Enter') sendOtp()
+            }}
+            placeholder="you@example.com"
+            style={flowInput}
+          />
+        ) : (
+          <input
+            type="tel"
+            value={inputPhone}
+            onChange={e => setInputPhone(e.target.value)}
+            onKeyDown={e => {
+              if (e.key === 'Enter') sendOtp()
+            }}
+            placeholder="+1 555 123 4567"
+            style={flowInput}
+          />
+        )
       ) : (
         <div style={{ marginBottom: 4 }}>
           <OtpInput
@@ -112,17 +175,17 @@ export function AuthPanel({
             autoFocus
           />
           <p style={{ margin: '12px 0 0', fontSize: 12, color: c.muted, textAlign: 'center' }}>
-            {busy ? 'Verifying…' : 'Enter the 6-digit code from your email'}
+            {busy ? 'Verifying…' : method === 'email' ? 'Enter the 6-digit code from your email' : 'Enter the 6-digit code from your text'}
           </p>
         </div>
       )}
-      {message && step === 'email' ? (
+      {message && step === 'input' ? (
         <p style={{ margin: '10px 0 0', fontSize: 12, color: successMessage ? c.green : c.red }}>{message}</p>
       ) : null}
       {message && step === 'otp' && !successMessage ? (
         <p style={{ margin: '10px 0 0', fontSize: 12, color: c.red, textAlign: 'center' }}>{message}</p>
       ) : null}
-      {step === 'email' ? (
+      {step === 'input' ? (
         <button
           className="dt-btn dt-glow dt-press"
           disabled={busy}
@@ -150,14 +213,14 @@ export function AuthPanel({
             className="dt-btn"
             disabled={busy}
             onClick={() => {
-              setStep('email')
+              setStep('input')
               setToken('')
               setMessage('')
               verifyingRef.current = false
             }}
             style={{ width: '100%', marginTop: 16, padding: 10, background: 'transparent', color: c.muted, border: 'none', cursor: 'pointer' }}
           >
-            Use a different email
+            {method === 'email' ? 'Use a different email' : 'Use a different number'}
           </button>
           <button
             className="dt-btn"

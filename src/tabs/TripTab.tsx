@@ -1,10 +1,13 @@
 import { starterDailyDrop } from '@/lib/starter'
 import { buildLeaderboard } from '@/engine/scoring'
+import { useTripStore } from '@/context/TripContext'
+import { RosterEditor, type RosterRow } from '@/components/RosterEditor'
 import type { Trip } from '@/types/trip'
 import { c, formatScore } from '@/styles'
 import { ScoreChip } from '@/components/TabBar'
 import { ShareQr } from '@/components/ShareQr'
-import { MapPin, Play, Trophy } from 'lucide-react'
+import { MapPin, Play, Trophy, Users } from 'lucide-react'
+import { useMemo, useState } from 'react'
 
 export function TripTab({
   trip,
@@ -15,9 +18,34 @@ export function TripTab({
   onRoundChange: (index: number) => void
   onShowMovie?: () => void
 }) {
+  const { updateTrip } = useTripStore()
+  const [rosterOpen, setRosterOpen] = useState(false)
   const leaders = buildLeaderboard(trip)
   const top = [...leaders].sort((a, b) => a.toParNet - b.toParNet).find(l => l.thru > 0)
   const drop = starterDailyDrop(trip, leaders)
+  const rosterRows: RosterRow[] = useMemo(
+    () =>
+      trip.players.map(p => ({
+        nick: p.nick,
+        hcp: p.hcp,
+        team: p.team,
+        venmo: p.venmo || ''
+      })),
+    [trip.players]
+  )
+
+  const saveRoster = (rows: RosterRow[]) => {
+    updateTrip(t => ({
+      ...t,
+      players: t.players.map((p, i) => ({
+        ...p,
+        nick: rows[i]?.nick || p.nick,
+        name: rows[i]?.nick || p.name,
+        hcp: rows[i]?.hcp ?? p.hcp,
+        venmo: rows[i]?.venmo ?? p.venmo
+      }))
+    }))
+  }
 
   return (
     <div className="dt-fade-in" style={{ padding: '16px 16px 100px' }}>
@@ -54,6 +82,20 @@ export function TripTab({
       </div>
 
       <ShareQr code={trip.code} tripName={trip.name} />
+
+      <button
+        className="dt-btn dt-btn-ghost"
+        onClick={() => setRosterOpen(v => !v)}
+        style={{ width: '100%', marginTop: 12, marginBottom: rosterOpen ? 8 : 14, padding: 12, borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
+      >
+        <Users size={16} color={c.gold} />
+        {rosterOpen ? 'Hide roster' : 'Edit roster'}
+      </button>
+      {rosterOpen ? (
+        <div style={{ marginBottom: 14 }}>
+          <RosterEditor rows={rosterRows} onChange={saveRoster} />
+        </div>
+      ) : null}
 
       {onShowMovie ? (
         <button

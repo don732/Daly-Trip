@@ -1,9 +1,14 @@
 import { useTripStore } from '@/context/TripContext'
 import { c } from '@/styles'
 import { Trophy } from 'lucide-react'
+import { useEffect } from 'react'
 
 export function ClubhousePanel({ onClose }: { onClose: () => void }) {
-  const { state } = useTripStore()
+  const { state, refreshMerit } = useTripStore()
+
+  useEffect(() => {
+    refreshMerit()
+  }, [refreshMerit])
 
   return (
     <div style={{ position: 'fixed', inset: 0, zIndex: 110, background: 'rgba(0,0,0,.75)' }} onClick={onClose}>

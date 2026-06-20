@@ -19,6 +19,22 @@ export async function verifyEmailOtp(email: string, token: string) {
   return sb.auth.verifyOtp({ email, token, type: 'email' })
 }
 
+export async function signInWithPhoneOtp(phone: string) {
+  const sb = getSupabase()
+  if (!sb) return { error: new Error('Supabase not configured') }
+  return sb.auth.signInWithOtp({ phone })
+}
+
+export async function verifyPhoneOtp(phone: string, token: string) {
+  const sb = getSupabase()
+  if (!sb) return { error: new Error('Supabase not configured') }
+  return sb.auth.verifyOtp({ phone, token, type: 'sms' })
+}
+
+export function phoneAuthEnabled(): boolean {
+  return import.meta.env.VITE_PHONE_AUTH_ENABLED === 'true'
+}
+
 export async function signOut() {
   const sb = getSupabase()
   if (!sb) return
@@ -34,12 +50,12 @@ export function onAuthStateChange(handler: (userId: string | null) => void) {
   return () => data.subscription.unsubscribe()
 }
 
-export async function ensureProfile(userId: string, email?: string | null) {
+export async function ensureProfile(userId: string, email?: string | null, phone?: string | null) {
   const sb = getSupabase()
   if (!sb) return
   await sb.from('profiles').upsert({
     id: userId,
-    display_name: email || null
+    display_name: email || phone || null
   })
 }
 
@@ -51,4 +67,11 @@ export function formatEmailLabel(email: string | null | undefined): string {
   const domain = email.slice(at + 1)
   const maskedLocal = local.length <= 1 ? local : `${local[0]}${'•'.repeat(Math.min(local.length - 1, 4))}`
   return `${maskedLocal}@${domain}`
+}
+
+export function formatPhoneLabel(phone: string | null | undefined): string {
+  if (!phone) return 'Signed in'
+  const digits = phone.replace(/\D/g, '')
+  if (digits.length < 4) return phone
+  return `••••${digits.slice(-4)}`
 }

@@ -5,6 +5,7 @@ export interface JoinProfile {
   hcp?: number
   venmo?: string
   claimPlayerId?: string
+  addNew?: boolean
 }
 
 export function applyJoinProfile(trip: Trip, profile?: JoinProfile): Trip {

@@ -143,11 +143,38 @@ export async function previewTripByCodeCloud(code: string): Promise<TripPreview 
   return data as TripPreview
 }
 
+export async function addPlayerToTripCloud(
+  code: string,
+  profile?: { nick?: string; hcp?: number; venmo?: string }
+): Promise<Trip | null> {
+  const sb = getSupabase()
+  if (!sb) return null
+  const session = await getSession()
+  if (!session?.user?.id) return null
+  const { data, error } = await sb.rpc('add_player_to_trip', {
+    p_code: code.trim().toUpperCase(),
+    p_nick: profile?.nick?.trim() ?? null,
+    p_hcp: profile?.hcp ?? 18,
+    p_venmo: profile?.venmo?.trim() ?? null
+  })
+  if (error) {
+    setSyncState('error', error.message)
+    return null
+  }
+  if (!data) return null
+  return data as Trip
+}
+
 export async function joinTripByCodeCloud(code: string, profile?: JoinProfile): Promise<Trip | null> {
   const sb = getSupabase()
   if (!sb) return null
   const session = await getSession()
   if (!session?.user?.id) return null
+
+  if (profile?.addNew) {
+    return addPlayerToTripCloud(code, profile)
+  }
+
   const { data, error } = await sb.rpc('join_trip_by_code', {
     p_code: code.trim().toUpperCase(),
     p_player_id: profile?.claimPlayerId ?? null,
@@ -156,6 +183,9 @@ export async function joinTripByCodeCloud(code: string, profile?: JoinProfile): 
     p_venmo: profile?.venmo?.trim() ?? null
   })
   if (error) {
+    if (/no roster slot/i.test(error.message)) {
+      return addPlayerToTripCloud(code, profile)
+    }
     setSyncState('error', error.message)
     return null
   }

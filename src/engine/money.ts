@@ -1,6 +1,6 @@
 import type { Trip } from '@/types/trip'
 import { computeSkinsForRound } from '@/engine/scoring'
-import { applySkinsBalances, allRoundContexts } from '@/engine/roundMoney'
+import { applySkinsBalances, applyNassauBalances, allRoundContexts } from '@/engine/roundMoney'
 
 export interface SettlementLine {
   from: string
@@ -26,6 +26,7 @@ export function computeSettlements(trip: Trip): SettlementLine[] {
   allRoundContexts(trip).forEach(ctx => {
     const skins = computeSkinsForRound(trip.players, ctx.course, ctx.games, ctx.scores)
     applySkinsBalances(balances, trip.players, ctx.games, skins)
+    applyNassauBalances(balances, trip.players, ctx.games, ctx.course, ctx.scores)
   })
   trip.bets.forEach(b => {
     if (b.settled) return
@@ -64,6 +65,7 @@ export function totalTripMoney(trip: Trip): Record<string, number> {
   allRoundContexts(trip).forEach(ctx => {
     const skins = computeSkinsForRound(trip.players, ctx.course, ctx.games, ctx.scores)
     applySkinsBalances(totals, trip.players, ctx.games, skins)
+    applyNassauBalances(totals, trip.players, ctx.games, ctx.course, ctx.scores)
   })
   return totals
 }

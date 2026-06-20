@@ -24,12 +24,20 @@ export function makeRound(input: {
   stake: number
   skins: boolean
   skinsStake?: number
+  nassau?: boolean
+  nassauStake?: number
   teamIds: { pine: string[]; sand: string[] }
 }): Round {
   const sides = DEFAULT_SIDES()
   if (input.skins) {
     sides.skins.on = true
     sides.skins.stake = input.skinsStake ?? 5
+  } else {
+    sides.skins.on = false
+  }
+  if (input.nassau) {
+    sides.nassau.on = true
+    sides.nassau.stake = input.nassauStake ?? 10
   }
   const gameStake = DEFAULT_STAKE()
   if (input.stake > 0) {
@@ -82,6 +90,8 @@ export function makeTripFromForm(form: TripFormInput): Trip {
       stake: form.stake,
       skins: form.skins,
       skinsStake: form.skinsStake,
+      nassau: form.nassau,
+      nassauStake: form.nassauStake,
       teamIds
     })
   )

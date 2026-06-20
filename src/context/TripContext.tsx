@@ -10,9 +10,11 @@ import {
 import { createDemoTrip } from '@/demo/createDemoTrip'
 import { DEMO_SEEN_KEY, isDemoTrip } from '@/demo/constants'
 import { applyJoinProfile, type JoinProfile } from '@/engine/joinProfile'
+import { addPlayerToTrip } from '@/engine/tripFactory'
 import { getSession } from '@/lib/auth'
 import { syncRoundFromTrip } from '@/engine/scoring'
 import { switchActiveRound } from '@/engine/tripFactory'
+import { fetchMeritStandings } from '@/lib/merit'
 import { uid } from '@/styles'
 
 export type { JoinProfile }
@@ -31,12 +33,21 @@ interface TripContextValue {
   reactToPost: (postId: string, emoji: string, playerId: string) => void
   addSideBet: (bet: Omit<BetEntry, 'id' | 'ts'>) => void
   loadDemo: () => Trip
+  refreshMerit: () => Promise<void>
 }
 
 const TripContext = createContext<TripContextValue | null>(null)
 
 function resolvePlayerId(trip: Trip, profile?: JoinProfile): string | null {
   if (profile?.claimPlayerId) return profile.claimPlayerId
+  if (profile?.addNew) {
+    const nick = profile.nick?.trim()
+    if (nick) {
+      const match = trip.players.find(p => p.nick === nick)
+      if (match) return match.id
+    }
+    return trip.players[trip.players.length - 1]?.id ?? null
+  }
   const nick = profile?.nick?.trim()
   if (nick) {
     const match = trip.players.find(p => p.nick === nick)
@@ -52,6 +63,12 @@ export function TripProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     saveState(state)
   }, [state])
+
+  useEffect(() => {
+    fetchMeritStandings().then(rows => {
+      if (rows.length) setState(prev => ({ ...prev, merit: rows }))
+    })
+  }, [])
 
   const trip = useMemo(() => getTrip(state, state.activeTripId), [state])
 
@@ -140,7 +157,9 @@ export function TripProvider({ children }: { children: ReactNode }) {
 
     let found: Trip | null = findTripByCode(state, upper) ?? null
     if (!found) return null
-    const merged = applyJoinProfile(found, profile)
+    let merged = profile?.addNew
+      ? addPlayerToTrip(found, profile.nick?.trim() || 'New Player', profile.hcp ?? 18)
+      : applyJoinProfile(found, profile)
     const playerId = resolvePlayerId(merged, profile)
     setState(prev => {
       let next = saveTrip(prev, merged)
@@ -191,6 +210,11 @@ export function TripProvider({ children }: { children: ReactNode }) {
     return demo
   }, [])
 
+  const refreshMerit = useCallback(async () => {
+    const rows = await fetchMeritStandings()
+    setState(prev => ({ ...prev, merit: rows }))
+  }, [])
+
   const value = useMemo(
     () => ({
       state,
@@ -205,9 +229,10 @@ export function TripProvider({ children }: { children: ReactNode }) {
       addFeedPost,
       reactToPost,
       addSideBet,
-      loadDemo
+      loadDemo,
+      refreshMerit
     }),
-    [state, trip, setActiveTrip, upsertTrip, updateTrip, joinByCode, joinByCodeAsync, getMyPlayerId, setMyPlayerId, addFeedPost, reactToPost, addSideBet, loadDemo]
+    [state, trip, setActiveTrip, upsertTrip, updateTrip, joinByCode, joinByCodeAsync, getMyPlayerId, setMyPlayerId, addFeedPost, reactToPost, addSideBet, loadDemo, refreshMerit]
   )
 
   return <TripContext.Provider value={value}>{children}</TripContext.Provider>

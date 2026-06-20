@@ -2,14 +2,16 @@ import { useMemo, useState, useEffect, type ReactNode } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { Minus, Plus, X } from 'lucide-react'
 import { AuthGate } from '@/components/AuthGate'
+import { CoursePicker } from '@/components/CoursePicker'
+import { RosterEditor, resizeRoster } from '@/components/RosterEditor'
 import { useTripStore } from '@/context/TripContext'
 import { makeTripFromForm } from '@/engine/tripFactory'
 import { registerTripOrganizer, pushTripToCloud, getSupabase } from '@/cloudStore'
 import { ensureProfile, getSession } from '@/lib/auth'
 import { recordTripPayment, startCheckout, TRIP_PRICE, verifyCheckout } from '@/lib/checkout'
-import type { TeamKey, Trip, TripBuilderForm } from '@/types/trip'
+import type { Trip, TripBuilderForm } from '@/types/trip'
 import { c, flowInput } from '@/styles'
-const STEPS = ['Players', 'Pay', 'Event Details'] as const
+const STEPS = ['Players', 'Pay', 'Roster', 'Event Details'] as const
 const PRESETS = [4, 6, 8, 10, 12, 16] as const
 
 const INVITE_LINES = [
@@ -32,7 +34,9 @@ function defaultForm(): TripBuilderForm {
     format: 'stroke',
     stake: 0,
     skinsOn: true,
-    skinsStake: 5
+    skinsStake: 5,
+    nassauOn: false,
+    nassauStake: 10
   }
 }
 
@@ -118,6 +122,14 @@ export function TripBuilderFlow() {
     }
   }, [searchParams, setSearchParams])
 
+  useEffect(() => {
+    if (step === 2) {
+      setForm(f =>
+        f.players.length === f.headcount ? f : { ...f, players: resizeRoster(f.players, f.headcount) }
+      )
+    }
+  }, [step, form.headcount])
+
   const total = useMemo(() => form.headcount * TRIP_PRICE, [form.headcount])
   const stepLabel = STEPS[step] || ''
   const canCreate = form.name.trim().length > 0
@@ -131,12 +143,11 @@ export function TripBuilderFlow() {
     setCreating(true)
     setCreateError('')
     try {
-      const players = Array.from({ length: form.headcount }, (_, i) => ({
-        nick: i === 0 ? 'Organizer' : `Player ${i + 1}`,
-        hcp: 18,
-        team: (i % 2 === 0 ? 'pine' : 'sand') as TeamKey,
-        venmo: ''
-      }))
+      const players =
+        form.players.length === form.headcount
+          ? form.players
+          : resizeRoster(form.players, form.headcount)
+      const courseName = form.rounds[0]?.courseName || form.location || form.name || 'Round 1'
       const trip = makeTripFromForm({
         name: form.name.trim(),
         location: form.location,
@@ -149,7 +160,9 @@ export function TripBuilderFlow() {
         stake: form.stake,
         skins: form.skinsOn,
         skinsStake: form.skinsStake,
-        rounds: [{ course: form.location || form.name || 'Round 1', name: 'Round 1' }]
+        nassau: form.nassauOn,
+        nassauStake: form.nassauStake,
+        rounds: [{ course: courseName, name: 'Round 1' }]
       })
       upsertTrip(trip)
       setMyPlayerId(trip.id, trip.players[0].id)
@@ -174,7 +187,7 @@ export function TripBuilderFlow() {
       }
 
       setCreatedTrip(trip)
-      setStep(3)
+      setStep(4)
     } catch (err) {
       const message =
         err && typeof err === 'object' && 'message' in err
@@ -205,6 +218,8 @@ export function TripBuilderFlow() {
     if (result.paid) setStep(2)
   }
 
+  const successStep = 4
+
   const inviteCrew = () => {
     if (!createdTrip) return
     const joinUrl = `https://dalytrips.com/join?code=${createdTrip.code}`
@@ -222,16 +237,16 @@ export function TripBuilderFlow() {
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
         <div>
           <div className="dt-display" style={{ fontSize: 22, fontWeight: 900, color: c.creamSoft }}>
-            {step < 3 ? 'New Event' : "You're in"}
+            {step < successStep ? 'New Event' : "You're in"}
           </div>
-          {step < 3 ? (
+          {step < successStep ? (
             <div className="dt-cond" style={{ fontSize: 12, color: c.muted, marginTop: 2 }}>
-              Step {step + 1} of 3 · {stepLabel}
+              Step {step + 1} of 4 · {stepLabel}
             </div>
           ) : null}
         </div>
         <button
-          onClick={() => (step > 0 && step < 3 ? setStep(step - 1) : navigate('/'))}
+          onClick={() => (step > 0 && step < successStep ? setStep(step - 1) : navigate('/'))}
           style={{
             background: 'none',
             border: `1.5px solid ${c.line}`,
@@ -245,9 +260,9 @@ export function TripBuilderFlow() {
         </button>
       </div>
 
-      {step < 3 ? (
+      {step < successStep ? (
         <div style={{ display: 'flex', gap: 6, marginBottom: 28 }}>
-          {[0, 1, 2].map(i => (
+          {[0, 1, 2, 3].map(i => (
             <div
               key={i}
               style={{
@@ -414,6 +429,38 @@ export function TripBuilderFlow() {
       {step === 2 ? (
         <div style={{ display: 'grid', gap: 16 }}>
           <div className="dt-cond" style={{ fontSize: 22, fontWeight: 900, color: c.creamSoft, marginBottom: 2 }}>
+            Name your crew
+          </div>
+          <div style={{ fontSize: 13, color: c.muted, marginBottom: 4, lineHeight: 1.5 }}>
+            Add nicknames and handicaps. You can edit these again in the Trip tab.
+          </div>
+          <RosterEditor
+            rows={form.players}
+            onChange={players => setForm(f => ({ ...f, players }))}
+          />
+          <button
+            onClick={() => setStep(3)}
+            className="dt-btn dt-glow dt-press"
+            style={{
+              width: '100%',
+              padding: 15,
+              borderRadius: 14,
+              cursor: 'pointer',
+              background: c.gold,
+              border: 'none',
+              color: c.creamSoft
+            }}
+          >
+            <span className="dt-cond" style={{ fontSize: 14.5, fontWeight: 800, letterSpacing: '.04em' }}>
+              NEXT →
+            </span>
+          </button>
+        </div>
+      ) : null}
+
+      {step === 3 ? (
+        <div style={{ display: 'grid', gap: 16 }}>
+          <div className="dt-cond" style={{ fontSize: 22, fontWeight: 900, color: c.creamSoft, marginBottom: 2 }}>
             Event details
           </div>
           {(
@@ -463,9 +510,92 @@ export function TripBuilderFlow() {
               />
             </div>
           </div>
+          <div>
+            <div className="dt-cond" style={{ fontSize: 10.5, letterSpacing: '.14em', color: c.gold, fontWeight: 700, marginBottom: 7 }}>
+              COURSE
+            </div>
+            <CoursePicker
+              value={form.rounds[0]?.courseName || form.location}
+              onChange={name =>
+                setForm(f => ({
+                  ...f,
+                  location: f.location || name,
+                  rounds: [{ name: 'Round 1', courseName: name }]
+                }))
+              }
+            />
+          </div>
+          <div>
+            <div className="dt-cond" style={{ fontSize: 10.5, letterSpacing: '.14em', color: c.gold, fontWeight: 700, marginBottom: 7 }}>
+              FORMAT
+            </div>
+            <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
+              {(['indiv', 'teams'] as const).map(mode => (
+                <button
+                  key={mode}
+                  type="button"
+                  onClick={() => setForm(f => ({ ...f, mode }))}
+                  className="dt-btn"
+                  style={{
+                    flex: 1,
+                    padding: 10,
+                    borderRadius: 10,
+                    cursor: 'pointer',
+                    border: `1.5px solid ${form.mode === mode ? c.gold : c.line}`,
+                    background: form.mode === mode ? 'rgba(201,162,75,.12)' : c.cardDeep,
+                    color: c.cream,
+                    fontSize: 13
+                  }}
+                >
+                  {mode === 'indiv' ? 'Individual' : 'Teams'}
+                </button>
+              ))}
+            </div>
+            <select
+              value={form.format}
+              onChange={e => setForm(f => ({ ...f, format: e.target.value as TripBuilderForm['format'] }))}
+              style={{ ...flowInput, marginBottom: 10 }}
+            >
+              <option value="stroke">Stroke play</option>
+              <option value="bestball">Best ball</option>
+              <option value="scramble">Scramble</option>
+              <option value="alternate">Alternate shot</option>
+            </select>
+          </div>
+          <div>
+            <div className="dt-cond" style={{ fontSize: 10.5, letterSpacing: '.14em', color: c.gold, fontWeight: 700, marginBottom: 7 }}>
+              GAMES
+            </div>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8, fontSize: 13, color: c.cream }}>
+              <input type="checkbox" checked={form.skinsOn} onChange={e => setForm(f => ({ ...f, skinsOn: e.target.checked }))} />
+              Skins
+              {form.skinsOn ? (
+                <input
+                  type="number"
+                  min={1}
+                  value={form.skinsStake}
+                  onChange={e => setForm(f => ({ ...f, skinsStake: Number(e.target.value) || 5 }))}
+                  style={{ ...flowInput, width: 72, marginBottom: 0, padding: '6px 8px' }}
+                />
+              ) : null}
+            </label>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 13, color: c.cream }}>
+              <input type="checkbox" checked={form.nassauOn} onChange={e => setForm(f => ({ ...f, nassauOn: e.target.checked }))} />
+              Nassau (front / back / overall)
+              {form.nassauOn ? (
+                <input
+                  type="number"
+                  min={1}
+                  value={form.nassauStake}
+                  onChange={e => setForm(f => ({ ...f, nassauStake: Number(e.target.value) || 10 }))}
+                  style={{ ...flowInput, width: 72, marginBottom: 0, padding: '6px 8px' }}
+                />
+              ) : null}
+            </label>
+          </div>
           <div style={{ marginTop: 8, display: 'flex', gap: 10 }}>
             <button
-              onClick={() => setStep(1)}
+              onClick={() => setStep(2)}
               className="dt-btn dt-press"
               style={{
                 flex: '0 0 auto',
@@ -507,7 +637,7 @@ export function TripBuilderFlow() {
         </div>
       ) : null}
 
-      {step === 3 && createdTrip ? (
+      {step === successStep && createdTrip ? (
         <div style={{ textAlign: 'center', paddingTop: 4 }}>
           <div style={{ fontSize: 48, marginBottom: 10 }}>🏌️</div>
           <div

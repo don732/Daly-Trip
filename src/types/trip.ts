@@ -169,6 +169,8 @@ export interface TripFormInput {
   stake: number
   skins: boolean
   skinsStake?: number
+  nassau?: boolean
+  nassauStake?: number
   rounds: Array<{ course: string; name?: string }>
 }
 
@@ -218,6 +220,8 @@ export interface TripBuilderForm {
   stake: number
   skinsOn: boolean
   skinsStake: number
+  nassauOn: boolean
+  nassauStake: number
 }
 
 declare global {
