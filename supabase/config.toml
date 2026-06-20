@@ -10,3 +10,12 @@ port = 54322
 [studio]
 enabled = true
 port = 54323
+
+[functions.create-checkout]
+verify_jwt = true
+
+[functions.verify-checkout]
+verify_jwt = false
+
+[functions.stripe-webhook]
+verify_jwt = false

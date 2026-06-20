@@ -1,12 +1,12 @@
-import { useMemo, useState, type ReactNode } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useMemo, useState, useEffect, type ReactNode } from 'react'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { Minus, Plus, X } from 'lucide-react'
 import { AuthGate } from '@/components/AuthGate'
 import { useTripStore } from '@/context/TripContext'
 import { makeTripFromForm } from '@/engine/tripFactory'
 import { registerTripOrganizer } from '@/cloudStore'
 import { getSession } from '@/lib/auth'
-import { recordTripPayment, startCheckout, TRIP_PRICE } from '@/lib/checkout'
+import { recordTripPayment, startCheckout, TRIP_PRICE, verifyCheckout } from '@/lib/checkout'
 import type { TeamKey, Trip, TripBuilderForm } from '@/types/trip'
 import { c, flowInput } from '@/styles'
 const STEPS = ['Players', 'Pay', 'Event Details'] as const
@@ -70,14 +70,51 @@ function shellCard(children: ReactNode) {
 
 export function TripBuilderFlow() {
   const navigate = useNavigate()
+  const [searchParams, setSearchParams] = useSearchParams()
   const { upsertTrip, setMyPlayerId } = useTripStore()
   const [step, setStep] = useState(0)
   const [form, setForm] = useState<TripBuilderForm>(defaultForm)
   const [paying, setPaying] = useState(false)
   const [paid, setPaid] = useState(false)
+  const [payError, setPayError] = useState('')
+  const [checkoutSessionId, setCheckoutSessionId] = useState<string | null>(null)
   const [createdTrip, setCreatedTrip] = useState<Trip | null>(null)
   const [invited, setInvited] = useState(false)
   const [starterLine, setStarterLine] = useState('')
+
+  useEffect(() => {
+    const status = searchParams.get('checkout')
+    const sessionId = searchParams.get('session_id')
+    if (status === 'cancel') {
+      setPayError('Payment cancelled')
+      setSearchParams({})
+      return
+    }
+    if (status !== 'success' || !sessionId) return
+
+    let cancelled = false
+    setPaying(true)
+    verifyCheckout(sessionId).then(result => {
+      if (cancelled) return
+      setPaying(false)
+      if (result.paid) {
+        setPaid(true)
+        setCheckoutSessionId(result.sessionId || sessionId)
+        const storedHeadcount = sessionStorage.getItem('dt_checkout_headcount')
+        if (result.headcount) setForm(prev => ({ ...prev, headcount: result.headcount! }))
+        else if (storedHeadcount) setForm(prev => ({ ...prev, headcount: Number(storedHeadcount) || prev.headcount }))
+        sessionStorage.removeItem('dt_checkout_headcount')
+        setStep(2)
+        setPayError('')
+      } else {
+        setPayError(result.error || 'Payment not completed')
+      }
+      setSearchParams({})
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [searchParams, setSearchParams])
 
   const total = useMemo(() => form.headcount * TRIP_PRICE, [form.headcount])
   const stepLabel = STEPS[step] || ''
@@ -118,7 +155,7 @@ export function TripBuilderFlow() {
         tripId: trip.id,
         userId: session?.user?.id || null,
         amount: form.headcount * TRIP_PRICE,
-        sessionId: `local_${trip.id}`,
+        sessionId: checkoutSessionId || `local_${trip.id}`,
         status: 'paid'
       })
     }
@@ -128,10 +165,21 @@ export function TripBuilderFlow() {
 
   const handlePay = async () => {
     setPaying(true)
-    const result = await startCheckout('new', form.headcount)
-    setPaid(result.paid)
+    setPayError('')
+    const result = await startCheckout(form.headcount)
+    if (result.redirectUrl) {
+      sessionStorage.setItem('dt_checkout_headcount', String(form.headcount))
+      window.location.href = result.redirectUrl
+      return
+    }
     setPaying(false)
-    setStep(2)
+    if (!result.ok) {
+      setPayError(result.error || 'Payment failed')
+      return
+    }
+    setPaid(result.paid)
+    if (result.sessionId) setCheckoutSessionId(result.sessionId)
+    if (result.paid) setStep(2)
   }
 
   const inviteCrew = () => {
@@ -331,6 +379,9 @@ export function TripBuilderFlow() {
               {paying ? 'PROCESSING…' : `PAY $${total}`}
             </span>
           </button>
+          {payError ? (
+            <p style={{ margin: '12px 0 0', fontSize: 12, color: c.red, textAlign: 'center' }}>{payError}</p>
+          ) : null}
           <div style={{ fontSize: 11, color: c.muted, lineHeight: 1.6, marginTop: 12, textAlign: 'center' }}>
             Secure payment · Organizer pays once · Players join free
           </div>

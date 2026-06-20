@@ -1,5 +1,7 @@
 import { useNavigate } from 'react-router-dom'
 import { DalyLogo } from '@/components/DalyLogo'
+import { useTripStore } from '@/context/TripContext'
+import { DEMO_SEEN_KEY } from '@/demo/constants'
 import { c } from '@/styles'
 
 const FEATURES = [
@@ -12,6 +14,13 @@ const FEATURES = [
 
 export function WelcomeFlow() {
   const navigate = useNavigate()
+  const { loadDemo } = useTripStore()
+  const seenDemo = typeof window !== 'undefined' && localStorage.getItem(DEMO_SEEN_KEY) === '1'
+
+  const exploreDemo = () => {
+    const trip = loadDemo()
+    navigate(`/trip/${trip.id}`)
+  }
 
   return (
     <div
@@ -149,6 +158,34 @@ export function WelcomeFlow() {
         >
           <span className="dt-cond" style={{ fontSize: 14, fontWeight: 700, letterSpacing: '.06em' }}>
             JOIN WITH CODE
+          </span>
+        </button>
+
+        {!seenDemo ? (
+          <div style={{ fontSize: 12, color: c.muted, textAlign: 'center', marginTop: 14, lineHeight: 1.5 }}>
+            New here? Try a live sample trip before you create your own.
+          </div>
+        ) : null}
+
+        <button
+          className="dt-btn dt-press"
+          onClick={exploreDemo}
+          style={{
+            width: '100%',
+            marginTop: seenDemo ? 10 : 8,
+            padding: 14,
+            borderRadius: 13,
+            cursor: 'pointer',
+            background: 'transparent',
+            border: `1.5px solid ${c.lineStrong}`,
+            color: c.creamSoft,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
+          }}
+        >
+          <span className="dt-cond" style={{ fontSize: 13, fontWeight: 700, letterSpacing: '.08em' }}>
+            EXPLORE THE DEMO
           </span>
         </button>
 

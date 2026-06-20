@@ -1,7 +1,8 @@
 import { useAuth } from '@/context/AuthContext'
+import { OtpInput } from '@/components/OtpInput'
 import { signInWithEmailOtp, verifyEmailOtp } from '@/lib/auth'
 import { c, flowInput } from '@/styles'
-import { useState } from 'react'
+import { useCallback, useRef, useState } from 'react'
 
 export function AuthPanel({
   required = false,
@@ -18,6 +19,31 @@ export function AuthPanel({
   const [step, setStep] = useState<'email' | 'otp'>('email')
   const [message, setMessage] = useState('')
   const [busy, setBusy] = useState(false)
+  const [shake, setShake] = useState(false)
+  const verifyingRef = useRef(false)
+
+  const confirmOtp = useCallback(
+    async (code: string) => {
+      const trimmed = code.trim()
+      if (trimmed.length !== 6 || verifyingRef.current) return
+      verifyingRef.current = true
+      setBusy(true)
+      setMessage('')
+      const { error } = await verifyEmailOtp(inputEmail.trim(), trimmed)
+      setBusy(false)
+      verifyingRef.current = false
+      if (error) {
+        setShake(true)
+        setMessage(error.message)
+        setToken('')
+        window.setTimeout(() => setShake(false), 450)
+        return
+      }
+      await refresh()
+      setMessage('')
+    },
+    [inputEmail, refresh]
+  )
 
   if (!configured) return null
 
@@ -39,23 +65,12 @@ export function AuthPanel({
       setMessage(error.message)
       return
     }
+    setToken('')
     setStep('otp')
     setMessage('Code sent — check your email')
   }
 
-  const confirmOtp = async () => {
-    if (!token.trim()) return
-    setBusy(true)
-    setMessage('')
-    const { error } = await verifyEmailOtp(inputEmail.trim(), token.trim())
-    setBusy(false)
-    if (error) {
-      setMessage(error.message)
-      return
-    }
-    await refresh()
-    setMessage('')
-  }
+  const successMessage = message.includes('sent') || message.includes('Verifying')
 
   return (
     <div
@@ -80,50 +95,88 @@ export function AuthPanel({
           type="email"
           value={inputEmail}
           onChange={e => setInputEmail(e.target.value)}
+          onKeyDown={e => {
+            if (e.key === 'Enter') sendOtp()
+          }}
           placeholder="you@example.com"
           style={flowInput}
         />
       ) : (
-        <input
-          value={token}
-          onChange={e => setToken(e.target.value)}
-          placeholder="6-digit code"
-          style={flowInput}
-        />
+        <div style={{ marginBottom: 4 }}>
+          <OtpInput
+            value={token}
+            onChange={setToken}
+            onComplete={confirmOtp}
+            disabled={busy}
+            shake={shake}
+            autoFocus
+          />
+          <p style={{ margin: '12px 0 0', fontSize: 12, color: c.muted, textAlign: 'center' }}>
+            {busy ? 'Verifying…' : 'Enter the 6-digit code from your email'}
+          </p>
+        </div>
       )}
-      {message ? <p style={{ margin: '10px 0 0', fontSize: 12, color: message.includes('sent') ? c.green : c.red }}>{message}</p> : null}
-      <button
-        className="dt-btn dt-glow dt-press"
-        disabled={busy}
-        onClick={step === 'email' ? sendOtp : confirmOtp}
-        style={{
-          width: '100%',
-          marginTop: 16,
-          padding: 16,
-          borderRadius: 13,
-          cursor: 'pointer',
-          background: c.felt,
-          border: `2px solid ${c.goldBright}`,
-          color: c.ink,
-          opacity: busy ? 0.7 : 1
-        }}
-      >
-        <span className="dt-cond" style={{ fontSize: 14, fontWeight: 800, letterSpacing: '.06em' }}>
-          {step === 'email' ? 'SEND CODE' : 'VERIFY & CONTINUE'}
-        </span>
-      </button>
-      {step === 'otp' ? (
+      {message && step === 'email' ? (
+        <p style={{ margin: '10px 0 0', fontSize: 12, color: successMessage ? c.green : c.red }}>{message}</p>
+      ) : null}
+      {message && step === 'otp' && !successMessage ? (
+        <p style={{ margin: '10px 0 0', fontSize: 12, color: c.red, textAlign: 'center' }}>{message}</p>
+      ) : null}
+      {step === 'email' ? (
         <button
-          className="dt-btn"
-          onClick={() => {
-            setStep('email')
-            setToken('')
-            setMessage('')
+          className="dt-btn dt-glow dt-press"
+          disabled={busy}
+          onClick={sendOtp}
+          style={{
+            width: '100%',
+            marginTop: 16,
+            padding: 16,
+            borderRadius: 13,
+            cursor: 'pointer',
+            background: c.felt,
+            border: `2px solid ${c.goldBright}`,
+            color: c.ink,
+            opacity: busy ? 0.7 : 1
           }}
-          style={{ width: '100%', marginTop: 10, padding: 10, background: 'transparent', color: c.muted, border: 'none', cursor: 'pointer' }}
         >
-          Use a different email
+          <span className="dt-cond" style={{ fontSize: 14, fontWeight: 800, letterSpacing: '.06em' }}>
+            SEND CODE
+          </span>
         </button>
+      ) : null}
+      {step === 'otp' ? (
+        <>
+          <button
+            className="dt-btn"
+            disabled={busy}
+            onClick={() => {
+              setStep('email')
+              setToken('')
+              setMessage('')
+              verifyingRef.current = false
+            }}
+            style={{ width: '100%', marginTop: 16, padding: 10, background: 'transparent', color: c.muted, border: 'none', cursor: 'pointer' }}
+          >
+            Use a different email
+          </button>
+          <button
+            className="dt-btn"
+            disabled={busy}
+            onClick={sendOtp}
+            style={{
+              width: '100%',
+              marginTop: 4,
+              padding: 10,
+              background: 'transparent',
+              color: c.gold,
+              border: 'none',
+              cursor: 'pointer',
+              fontSize: 13
+            }}
+          >
+            Resend code
+          </button>
+        </>
       ) : null}
     </div>
   )

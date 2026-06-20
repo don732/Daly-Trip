@@ -42,3 +42,13 @@ migrations/20240615000000_add_storage_avatars.sql
 Never edit migrations that have already been applied to production. Append only.
 
 After adding a migration, update `schema.sql` so it stays a complete reference snapshot.
+
+## Edge Functions (Stripe)
+
+| Function | JWT | Purpose |
+|----------|-----|---------|
+| `create-checkout` | required | Creates Stripe Checkout session for signed-in organizer |
+| `verify-checkout` | public | Verifies `session_id` after redirect |
+| `stripe-webhook` | public | Records `trip_payments` on `checkout.session.completed` |
+
+Deploy and secrets: see [`DEPLOY.md`](../DEPLOY.md) → Stripe checkout.

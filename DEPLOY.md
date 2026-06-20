@@ -37,6 +37,19 @@ bash scripts/vps-deploy.sh
 | Realtime | `trips` table in `supabase_realtime` publication |
 | Email auth | Enable Email provider (OTP). Phone/SMS can be added later via Twilio. |
 
+### Custom SMTP (required for branded OTP emails)
+
+Supabase’s built-in mailer is rate-limited (~2/hour) and sends magic links by default. For production-style OTP:
+
+1. **SMTP provider** — e.g. [Brevo](https://www.brevo.com) (free ~300/day) or Resend (~100/day). Sender: `invites@dalytrips.com`.
+2. **Supabase → Authentication → SMTP** — enable custom SMTP with your provider credentials.
+3. **Email template** — Supabase → Authentication → Email Templates → **Magic Link**:
+   - Paste HTML from [`supabase/email-templates/magic-link-otp.html`](supabase/email-templates/magic-link-otp.html)
+   - Must include `{{ .Token }}` and **must not** include `{{ .ConfirmationURL }}` (otherwise users get a link instead of a code)
+   - Subject suggestion: `Your Daly Trips sign-in code`
+
+The app auto-verifies when all 6 digits are entered (`OtpInput` + `AuthPanel`).
+
 ### Apply auth migrations (required)
 
 Run on your Supabase project SQL editor, in order:
@@ -45,6 +58,35 @@ Run on your Supabase project SQL editor, in order:
 2. [`supabase/migrations/20240615000001_auth_rls.sql`](supabase/migrations/20240615000001_auth_rls.sql) — member-only trip access
 
 **Before step 2:** delete or backfill legacy trips with `organizer_id is null` if they were created under anon sync. New trips require a signed-in organizer.
+
+### Stripe checkout (Edge Functions)
+
+Payment uses Supabase Edge Functions — no extra VPS service.
+
+**Deploy functions** (requires [Supabase CLI](https://supabase.com/docs/guides/cli)):
+
+```bash
+supabase login
+supabase link --project-ref YOUR_PROJECT_REF
+supabase secrets set STRIPE_SECRET_KEY=sk_test_... STRIPE_WEBHOOK_SECRET=whsec_... SITE_URL=https://dalytrips.com
+supabase functions deploy create-checkout
+supabase functions deploy verify-checkout
+supabase functions deploy stripe-webhook
+```
+
+**Stripe Dashboard → Webhooks** — add endpoint:
+
+`https://YOUR_PROJECT_REF.supabase.co/functions/v1/stripe-webhook`
+
+Events: `checkout.session.completed`
+
+| Secret | Where |
+|--------|-------|
+| `STRIPE_SECRET_KEY` | Supabase secrets (test or live) |
+| `STRIPE_WEBHOOK_SECRET` | Supabase secrets (from webhook endpoint) |
+| `SITE_URL` | `https://dalytrips.com` |
+
+Flow: organizer signs in → **PAY $X** → Stripe Checkout → return to `/plan?checkout=success&session_id=...` → event details → create trip. Without Supabase env vars, pay step uses a local stub (dev only).
 
 ## Deploy
 
@@ -61,9 +103,10 @@ bash scripts/vps-deploy.sh
 
 | Step | Device A (organizer) | Device B (player) |
 |------|----------------------|-------------------|
+| 0 | Open `/` → **EXPLORE THE DEMO** (optional, no sign-in) | — |
 | 1 | Open `/` → **CREATE AN EVENT** | — |
 | 2 | Sign in with email OTP | — |
-| 3 | Complete headcount → **PAY $X** → event details → create | — |
+| 3 | Complete headcount → **PAY $X** (Stripe) → event details → create | — |
 | 4 | Copy join code from invite screen | Open `/join?code=XXXXXX` |
 | 5 | Sign in if prompted; enter the trip; header shows **Live** | Sign in → claim roster slot → confirm join |
 | 6 | Play → change a score on hole 1 | Board tab updates within ~1–2 s |
@@ -80,7 +123,6 @@ If sync shows **Sync error**, hover the pill for the message. Common fixes: wron
 
 ## Deferred product work
 
-- Real Stripe checkout (`VITE_CHECKOUT_API_URL` + server endpoint)
 - Order of Merit from `merit_standings` in Supabase (Clubhouse today uses local empty merit)
 - Add-player beyond organizer headcount (`addPlayerToTrip`)
 - Named invite lists (code + auth is the current invite model)

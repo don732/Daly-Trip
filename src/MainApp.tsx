@@ -20,6 +20,7 @@ import { HighlightReel } from '@/components/HighlightReel'
 import { LiveTicker } from '@/components/LiveTicker'
 import { DalyLogo } from '@/components/DalyLogo'
 import { SyncStatus } from '@/components/SyncStatus'
+import { DEMO_TRIP_ID, isDemoTrip } from '@/demo/constants'
 import { BUILD_STAMP, c } from '@/styles'
 
 const TABS = [
@@ -33,7 +34,7 @@ const TABS = [
 export function MainApp() {
   const { tripId } = useParams()
   const navigate = useNavigate()
-  const { state, trip, updateTrip, setActiveTrip, upsertTrip, addFeedPost, reactToPost, getMyPlayerId } = useTripStore()
+  const { state, trip, updateTrip, setActiveTrip, upsertTrip, addFeedPost, reactToPost, getMyPlayerId, loadDemo } = useTripStore()
   const { email, signOut, configured: authConfigured } = useAuth()
   const [tab, setTab] = useState('trip')
   const [menuOpen, setMenuOpen] = useState(false)
@@ -46,7 +47,15 @@ export function MainApp() {
     if (!tripId) return
     const found = getTrip(state, tripId)
     if (found) {
+      if (isDemoTrip(found)) {
+        if (state.activeTripId !== tripId) setActiveTrip(tripId)
+        return
+      }
       if (state.activeTripId !== tripId) setActiveTrip(tripId)
+      return
+    }
+    if (tripId === DEMO_TRIP_ID) {
+      loadDemo()
       return
     }
     let cancelled = false
@@ -57,7 +66,7 @@ export function MainApp() {
     return () => {
       cancelled = true
     }
-  }, [tripId, state.trips, state.activeTripId, setActiveTrip, upsertTrip])
+  }, [tripId, state.trips, state.activeTripId, setActiveTrip, upsertTrip, loadDemo])
 
   if (!trip) {
     return (
@@ -147,6 +156,42 @@ export function MainApp() {
             </button>
           </div>
           </div>
+          {isDemoTrip(trip) ? (
+            <div
+              style={{
+                margin: '0 16px 10px',
+                padding: '10px 14px',
+                borderRadius: 12,
+                background: c.surfaceGold,
+                border: `1.5px solid ${c.goldBright}`,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: 12
+              }}
+            >
+              <div style={{ fontSize: 12, color: c.creamSoft, lineHeight: 1.45 }}>
+                <strong>Demo trip</strong> · Sample scores &amp; feed. Create your own event when ready.
+              </div>
+              <button
+                className="dt-btn dt-press"
+                onClick={() => navigate('/plan')}
+                style={{
+                  flexShrink: 0,
+                  padding: '8px 12px',
+                  borderRadius: 10,
+                  background: c.felt,
+                  border: `1.5px solid ${c.goldBright}`,
+                  color: c.ink,
+                  fontSize: 11,
+                  fontWeight: 700,
+                  cursor: 'pointer'
+                }}
+              >
+                CREATE
+              </button>
+            </div>
+          ) : null}
           {tab !== 'trip' ? <LiveTicker trip={trip} onClick={() => setTab('board')} /> : null}
         </header>
 

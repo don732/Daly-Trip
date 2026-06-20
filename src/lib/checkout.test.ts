@@ -1,44 +1,73 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest'
 
-describe('startCheckout', () => {
+const mockGetSupabase = vi.fn()
+const mockGetSession = vi.fn()
+
+vi.mock('@/cloudStore', () => ({
+  getSupabase: () => mockGetSupabase()
+}))
+
+vi.mock('@/lib/auth', () => ({
+  getSession: () => mockGetSession()
+}))
+
+describe('checkout', () => {
   beforeEach(() => {
     vi.resetModules()
-    vi.unstubAllEnvs()
+    mockGetSupabase.mockReset()
+    mockGetSession.mockReset()
   })
 
   afterEach(() => {
     vi.useRealTimers()
-    vi.unstubAllEnvs()
-    vi.unstubAllGlobals()
   })
 
-  it('returns paid true after stub delay when no checkout API is configured', async () => {
+  it('returns paid true after stub delay when supabase is missing', async () => {
     vi.useFakeTimers()
+    mockGetSupabase.mockReturnValue(null)
     const { startCheckout } = await import('@/lib/checkout')
-    const pending = startCheckout('trip-1', 4)
+    const pending = startCheckout(4)
     await vi.advanceTimersByTimeAsync(1200)
     const result = await pending
-    expect(result).toEqual({ ok: true, paid: true, sessionId: 'local_trip-1' })
+    expect(result.ok).toBe(true)
+    expect(result.paid).toBe(true)
+    expect(result.sessionId).toMatch(/^local_/)
   })
 
-  it('uses checkout API response when configured', async () => {
-    vi.stubEnv('VITE_CHECKOUT_API_URL', 'https://checkout.example.com')
-    const fetchMock = vi.fn().mockResolvedValue({
-      ok: true,
-      json: async () => ({ paid: true, sessionId: 'sess_123' })
+  it('redirects via edge function when supabase is configured', async () => {
+    const invoke = vi.fn().mockResolvedValue({
+      data: { url: 'https://checkout.stripe.com/test', sessionId: 'cs_test_1' },
+      error: null
     })
-    vi.stubGlobal('fetch', fetchMock)
+    mockGetSupabase.mockReturnValue({ functions: { invoke } })
+    mockGetSession.mockResolvedValue({ user: { id: 'user-1', email: 'a@test.com' } })
     const { startCheckout } = await import('@/lib/checkout')
-    const result = await startCheckout('trip-2', 2)
-    expect(fetchMock).toHaveBeenCalledWith('https://checkout.example.com/checkout', expect.objectContaining({ method: 'POST' }))
-    expect(result).toEqual({ ok: true, paid: true, sessionId: 'sess_123' })
+    const result = await startCheckout(4)
+    expect(invoke).toHaveBeenCalledWith('create-checkout', expect.objectContaining({ body: { headcount: 4, amount: 20 } }))
+    expect(result).toEqual({
+      ok: true,
+      paid: false,
+      redirectUrl: 'https://checkout.stripe.com/test',
+      sessionId: 'cs_test_1'
+    })
   })
 
-  it('returns failure when checkout API errors', async () => {
-    vi.stubEnv('VITE_CHECKOUT_API_URL', 'https://checkout.example.com')
-    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('network')))
-    const { startCheckout } = await import('@/lib/checkout')
-    const result = await startCheckout('trip-3', 2)
-    expect(result).toEqual({ ok: false, paid: false })
+  it('verifies local stub sessions without calling supabase', async () => {
+    const { verifyCheckout } = await import('@/lib/checkout')
+    const result = await verifyCheckout('local_abc')
+    expect(result).toEqual({ ok: true, paid: true, sessionId: 'local_abc' })
+  })
+
+  it('verifies stripe sessions via edge function', async () => {
+    const invoke = vi.fn().mockResolvedValue({
+      data: { paid: true, sessionId: 'cs_test_1', headcount: 6, amount: 30 },
+      error: null
+    })
+    mockGetSupabase.mockReturnValue({ functions: { invoke } })
+    const { verifyCheckout } = await import('@/lib/checkout')
+    const result = await verifyCheckout('cs_test_1')
+    expect(invoke).toHaveBeenCalledWith('verify-checkout', { body: { sessionId: 'cs_test_1' } })
+    expect(result.paid).toBe(true)
+    expect(result.headcount).toBe(6)
   })
 })

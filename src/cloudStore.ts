@@ -60,6 +60,7 @@ function activeRoundId(trip: Trip): string | null {
 }
 
 export async function pushTripToCloud(trip: Trip): Promise<void> {
+  if (trip.seed) return
   const sb = getSupabase()
   if (!sb) {
     setSyncState('offline', null)
@@ -106,6 +107,7 @@ const debouncedPush = debounce((trip: Trip) => {
 }, 800)
 
 export function schedulePushTripToCloud(trip: Trip): void {
+  if (trip.seed) return
   debouncedPush(trip)
 }
 

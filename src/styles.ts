@@ -96,6 +96,14 @@ export const STYLES = `
 .dt-chip-under { background:rgba(184,32,48,.12); color:#B82030; border:1px solid rgba(184,32,48,.28); }
 .dt-chip-over { background:rgba(26,102,48,.12); color:#1A6630; border:1px solid rgba(26,102,48,.28); }
 .dt-chip-even { background:rgba(13,31,60,.06); color:${c.cream}; border:1px solid ${c.line}; }
+
+.dt-otp-shake { animation:dtOtpShake .42s cubic-bezier(.36,.07,.19,.97) both; }
+@keyframes dtOtpShake {
+  10%, 90% { transform:translateX(-1px); }
+  20%, 80% { transform:translateX(2px); }
+  30%, 50%, 70% { transform:translateX(-4px); }
+  40%, 60% { transform:translateX(4px); }
+}
 `
 
 export const flowInput: CSSProperties = {

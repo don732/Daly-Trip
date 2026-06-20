@@ -7,6 +7,8 @@ import {
   schedulePushTripToCloud,
   subscribeTrip
 } from '@/cloudStore'
+import { createDemoTrip } from '@/demo/createDemoTrip'
+import { DEMO_SEEN_KEY, isDemoTrip } from '@/demo/constants'
 import { applyJoinProfile, type JoinProfile } from '@/engine/joinProfile'
 import { getSession } from '@/lib/auth'
 import { syncRoundFromTrip } from '@/engine/scoring'
@@ -28,6 +30,7 @@ interface TripContextValue {
   addFeedPost: (body: string, authorId: string, authorNick: string) => void
   reactToPost: (postId: string, emoji: string, playerId: string) => void
   addSideBet: (bet: Omit<BetEntry, 'id' | 'ts'>) => void
+  loadDemo: () => Trip
 }
 
 const TripContext = createContext<TripContextValue | null>(null)
@@ -55,6 +58,8 @@ export function TripProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const tripId = state.activeTripId
     if (!tripId) return
+    const local = getTrip(state, tripId)
+    if (isDemoTrip(local)) return
     let cancelled = false
     let unsubscribe: (() => void) | null = null
 
@@ -175,6 +180,17 @@ export function TripProvider({ children }: { children: ReactNode }) {
     }))
   }, [updateTrip])
 
+  const loadDemo = useCallback((): Trip => {
+    const demo = createDemoTrip()
+    if (typeof window !== 'undefined') localStorage.setItem(DEMO_SEEN_KEY, '1')
+    setState(prev => {
+      let next = saveTrip(prev, demo)
+      next = setMemberPlayer(next, demo.id, demo.players[0].id)
+      return next
+    })
+    return demo
+  }, [])
+
   const value = useMemo(
     () => ({
       state,
@@ -188,9 +204,10 @@ export function TripProvider({ children }: { children: ReactNode }) {
       setMyPlayerId,
       addFeedPost,
       reactToPost,
-      addSideBet
+      addSideBet,
+      loadDemo
     }),
-    [state, trip, setActiveTrip, upsertTrip, updateTrip, joinByCode, joinByCodeAsync, getMyPlayerId, setMyPlayerId, addFeedPost, reactToPost, addSideBet]
+    [state, trip, setActiveTrip, upsertTrip, updateTrip, joinByCode, joinByCodeAsync, getMyPlayerId, setMyPlayerId, addFeedPost, reactToPost, addSideBet, loadDemo]
   )
 
   return <TripContext.Provider value={value}>{children}</TripContext.Provider>
