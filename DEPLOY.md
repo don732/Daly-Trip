@@ -58,6 +58,7 @@ Run on your Supabase project SQL editor, in order:
 2. [`supabase/migrations/20240615000001_auth_rls.sql`](supabase/migrations/20240615000001_auth_rls.sql) — member-only trip access
 3. [`supabase/migrations/20240616000000_add_player_rpc.sql`](supabase/migrations/20240616000000_add_player_rpc.sql) — overflow join (`add_player_to_trip`)
 4. [`supabase/migrations/20240616000001_merit_policies.sql`](supabase/migrations/20240616000001_merit_policies.sql) — merit upsert policies
+5. [`supabase/migrations/20240620000000_fix_organizer_trips_rls.sql`](supabase/migrations/20240620000000_fix_organizer_trips_rls.sql) — **required if create trip returns HTTP 403**
 
 **Before step 2:** delete or backfill legacy trips with `organizer_id is null` if they were created under anon sync. New trips require a signed-in organizer.
 
@@ -133,6 +134,8 @@ If Device B does not update:
 - Clear site data / localStorage if a stale trip blocks join
 
 If sync shows **Sync error**, hover the pill for the message. Common fixes: wrong anon key, RLS blocking upsert, missing `trip_members` row, or Realtime not enabled.
+
+**HTTP 403 on `POST /rest/v1/trips` (error 42501):** run migration [`20240620000000_fix_organizer_trips_rls.sql`](supabase/migrations/20240620000000_fix_organizer_trips_rls.sql). Confirm [`20240615000001_auth_rls.sql`](supabase/migrations/20240615000001_auth_rls.sql) ran first. In SQL editor: `select policyname, cmd from pg_policies where tablename = 'trips';` — expect `trips_insert_auth`, `trips_read_auth`, `trips_update_auth`.
 
 ## Still optional / ops
 

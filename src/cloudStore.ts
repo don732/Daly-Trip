@@ -1,6 +1,6 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 import type { JoinProfile } from '@/engine/joinProfile'
-import { getSession } from '@/lib/auth'
+import { getSession, ensureProfile } from '@/lib/auth'
 import type { Trip, TripPreview } from '@/types/trip'
 import { debounce } from '@/lib/debounce'
 
@@ -73,21 +73,25 @@ export async function pushTripToCloud(trip: Trip): Promise<void> {
     setSyncState('error', message)
     throw new Error(message)
   }
-  const { error } = await sb.from('trips').upsert({
-    id: trip.id,
-    code: trip.code,
-    name: trip.name,
-    location: trip.location,
-    start_date: trip.start,
-    end_date: trip.end,
-    paid: trip.paid,
-    seed: trip.seed,
-    price: trip.price,
-    organizer_id: session.user.id,
-    active_round_id: activeRoundId(trip),
-    document: trip,
-    updated_at: new Date().toISOString()
-  })
+  await ensureProfile(session.user.id, session.user.email, session.user.phone)
+  const { error } = await sb.from('trips').upsert(
+    {
+      id: trip.id,
+      code: trip.code,
+      name: trip.name,
+      location: trip.location,
+      start_date: trip.start,
+      end_date: trip.end,
+      paid: trip.paid,
+      seed: trip.seed,
+      price: trip.price,
+      organizer_id: session.user.id,
+      active_round_id: activeRoundId(trip),
+      document: trip,
+      updated_at: new Date().toISOString()
+    },
+    { onConflict: 'id' }
+  )
   if (error) {
     setSyncState('error', error.message)
     throw error

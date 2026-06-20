@@ -12,7 +12,8 @@ const mockFrom = vi.fn(() => ({
 }))
 
 vi.mock('@/lib/auth', () => ({
-  getSession: vi.fn().mockResolvedValue({ user: { id: 'user-abc-123' } })
+  getSession: vi.fn().mockResolvedValue({ user: { id: 'user-abc-123', email: 'o@test.com' } }),
+  ensureProfile: vi.fn().mockResolvedValue(undefined)
 }))
 
 vi.mock('@supabase/supabase-js', () => ({

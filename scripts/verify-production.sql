@@ -3,7 +3,8 @@
 
 -- 1. Auth RLS policies present
 select policyname, cmd from pg_policies where tablename = 'trips' order by policyname;
--- Expect: trips_insert_auth, trips_read_auth, trips_update_auth (and possibly seed policies if not dropped)
+-- Expect: trips_insert_auth, trips_read_auth, trips_update_auth
+-- Must NOT have trips_update_anon_document or trips_read_by_code (legacy anon policies)
 
 -- 2. Join RPCs exist
 select proname from pg_proc where proname in (
