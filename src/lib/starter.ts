@@ -87,7 +87,8 @@ function fallbackRoast(player: Player, trip?: Trip, leaders?: LeaderRow[]): stri
   const line = ROAST_LINES[Math.floor(Math.random() * ROAST_LINES.length)]
   const nick = player.nick.split(' ').pop() || player.nick
   const scoreBit = row?.thru ? ` through ${row.thru} at ${formatToPar(row.toParNet)} net` : ''
-  return `${nick}${scoreBit}: ${line}${player.weakness ? ` (${player.weakness})` : ''} — The Starter on Daly Trips ⛳`
+  const tripBit = trip?.name ? ` at ${trip.name}` : ''
+  return `${nick}${scoreBit}${tripBit}: ${line}${player.weakness ? ` (${player.weakness})` : ''} — The Starter on Daly Trips ⛳`
 }
 
 export async function generateRoastAsync(player: Player, trip: Trip): Promise<string> {
