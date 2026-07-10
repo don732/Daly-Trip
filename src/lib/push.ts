@@ -2,11 +2,12 @@ import { getSupabase } from '@/cloudStore'
 
 export type PushPermission = 'unsupported' | 'denied' | 'granted'
 
-function urlBase64ToUint8Array(base64: string): Uint8Array {
+function urlBase64ToUint8Array(base64: string): Uint8Array<ArrayBuffer> {
   const padding = '='.repeat((4 - (base64.length % 4)) % 4)
   const base64Safe = (base64 + padding).replace(/-/g, '+').replace(/_/g, '/')
   const raw = atob(base64Safe)
-  const out = new Uint8Array(raw.length)
+  const buffer = new ArrayBuffer(raw.length)
+  const out = new Uint8Array(buffer)
   for (let i = 0; i < raw.length; i += 1) out[i] = raw.charCodeAt(i)
   return out
 }
