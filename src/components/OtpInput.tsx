@@ -145,7 +145,7 @@ export function OtpInput({
               border: `2px solid ${active ? c.goldBright : filled ? c.goldDim : c.lineStrong}`,
               color: c.creamSoft,
               outline: 'none',
-              boxShadow: active ? '0 0 0 3px rgba(201,162,75,.22)' : 'none',
+              boxShadow: active ? '0 0 0 3px rgba(200,16,46,.22)' : 'none',
               transition: 'border-color .15s, box-shadow .15s, background .15s',
               fontFamily: "'Archivo', sans-serif",
               opacity: disabled ? 0.6 : 1

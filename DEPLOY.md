@@ -59,6 +59,7 @@ Run on your Supabase project SQL editor, in order:
 3. [`supabase/migrations/20240616000000_add_player_rpc.sql`](supabase/migrations/20240616000000_add_player_rpc.sql) — overflow join (`add_player_to_trip`)
 4. [`supabase/migrations/20240616000001_merit_policies.sql`](supabase/migrations/20240616000001_merit_policies.sql) — merit upsert policies
 5. [`supabase/migrations/20240620000000_fix_organizer_trips_rls.sql`](supabase/migrations/20240620000000_fix_organizer_trips_rls.sql) — **required if create trip returns HTTP 403**
+6. [`supabase/migrations/20240621000000_push_subscriptions.sql`](supabase/migrations/20240621000000_push_subscriptions.sql) — Web Push subscription storage
 
 **Before step 2:** delete or backfill legacy trips with `organizer_id is null` if they were created under anon sync. New trips require a signed-in organizer.
 
@@ -71,7 +72,34 @@ Run [`scripts/verify-production.sql`](scripts/verify-production.sql) in the SQL 
 | Variable | Purpose |
 |----------|---------|
 | `VITE_PHONE_AUTH_ENABLED=true` | Show SMS sign-in tab (requires Supabase Phone + Twilio) |
-| `VITE_STARTER_API_URL` | POST endpoint for real Starter LLM replies (JSON `{ reply }`) |
+| `VITE_STARTER_API_URL` | Override Starter API (default: same-origin `POST /api/starter` → `{ text }`) |
+| `VITE_VAPID_PUBLIC_KEY` | Web Push VAPID public key (enables push subscribe on trip load) |
+
+### Starter + Push APIs (Edge Functions)
+
+v11 uses same-origin routes. **Host nginx** (not the Docker static container) must proxy `/api/*` to Supabase — see [`docker/dalytrips.com.nginx.example`](docker/dalytrips.com.nginx.example). Local dev uses Vite `server.proxy` in [`vite.config.ts`](vite.config.ts).
+
+**Deploy functions:**
+
+```bash
+supabase secrets set \
+  VAPID_PUBLIC_KEY=... \
+  VAPID_PRIVATE_KEY=... \
+  VAPID_SUBJECT=mailto:invites@dalytrips.com \
+  OPENAI_API_KEY=sk-...   # optional — Starter LLM replies
+
+supabase functions deploy starter-reply
+supabase functions deploy push-subscribe
+supabase functions deploy push-send
+```
+
+| Route | Function | Contract |
+|-------|----------|----------|
+| `POST /api/starter` | `starter-reply` | `{ history, context }` → `{ text }` |
+| `POST /api/push/subscribe` | `push-subscribe` | `{ endpoint, keys }` + `Authorization: Bearer <jwt>` |
+| `POST /api/push/send` | `push-send` | `{ toUserId }` or `{ tripId, title, body, excludeUserId? }` |
+
+Generate VAPID keys: `npx web-push generate-vapid-keys`. Set public key in Vite build (`VITE_VAPID_PUBLIC_KEY`) and both keys in Supabase secrets.
 
 ### Stripe checkout (Edge Functions)
 
@@ -120,7 +148,7 @@ bash scripts/vps-deploy.sh
 | 0 | Open `/` → **EXPLORE THE DEMO** (optional, no sign-in) | — |
 | 1 | Open `/` → **CREATE AN EVENT** | — |
 | 2 | Sign in with email OTP | — |
-| 3 | Complete headcount → **PAY $X** → roster → event details → create | — |
+| 3 | Complete headcount → **PAY $X** → event details → create | — |
 | 4 | Copy join code from invite screen | Open `/join?code=XXXXXX` |
 | 5 | Sign in if prompted; enter the trip; header shows **Live** | Sign in → claim roster slot → confirm join |
 | 6 | Play → change a score on hole 1 | Board tab updates within ~1–2 s |

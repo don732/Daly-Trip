@@ -39,9 +39,9 @@ export function LiveTicker({ trip, onClick }: { trip: Trip; onClick?: () => void
       >
         <span
           className="dt-live-dot"
-          style={{ width: 7, height: 7, borderRadius: 9, background: '#FF6B7A', boxShadow: '0 0 6px #FF6B7A' }}
+          style={{ width: 7, height: 7, borderRadius: 9, background: c.gold, boxShadow: `0 0 6px ${c.gold}` }}
         />
-        <span className="dt-cond" style={{ fontSize: 11, fontWeight: 800, letterSpacing: '.18em', color: '#FF6B7A' }}>
+        <span className="dt-cond" style={{ fontSize: 11, fontWeight: 800, letterSpacing: '.18em', color: c.gold }}>
           LIVE
         </span>
       </div>
@@ -72,7 +72,7 @@ export function LiveTicker({ trip, onClick }: { trip: Trip; onClick?: () => void
               letterSpacing: '.12em',
               color: c.goldBright,
               padding: '0 16px',
-              borderLeft: '1px solid rgba(201,162,75,.25)',
+              borderLeft: '1px solid rgba(200,16,46,.25)',
               lineHeight: '36px'
             }}
           >

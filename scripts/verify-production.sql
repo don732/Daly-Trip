@@ -27,3 +27,6 @@ limit 10;
 
 -- 5. Profiles for auth users (sample)
 select id, display_name, created_at from profiles order by created_at desc limit 10;
+
+-- 6. Push subscriptions table (after 20240621000000 migration)
+select count(*) as push_subscribers from push_subscriptions;

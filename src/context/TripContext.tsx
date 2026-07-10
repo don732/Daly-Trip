@@ -12,6 +12,7 @@ import { DEMO_SEEN_KEY, isDemoTrip } from '@/demo/constants'
 import { applyJoinProfile, type JoinProfile } from '@/engine/joinProfile'
 import { addPlayerToTrip } from '@/engine/tripFactory'
 import { getSession } from '@/lib/auth'
+import { notifyTripActivity } from '@/lib/push'
 import { syncRoundFromTrip } from '@/engine/scoring'
 import { switchActiveRound } from '@/engine/tripFactory'
 import { fetchMeritStandings } from '@/lib/merit'
@@ -171,10 +172,26 @@ export function TripProvider({ children }: { children: ReactNode }) {
   }, [state])
 
   const addFeedPost = useCallback((body: string, authorId: string, authorNick: string) => {
-    updateTrip(t => ({
-      ...t,
-      feed: [{ id: uid('feed'), authorId, authorNick, body, ts: Date.now(), reactions: {} }, ...t.feed]
-    }))
+    updateTrip(t => {
+      const next = {
+        ...t,
+        feed: [{ id: uid('feed'), authorId, authorNick, body, ts: Date.now(), reactions: {} }, ...t.feed]
+      }
+      if (!isDemoTrip(t)) {
+        getSession()
+          .then(session => {
+            notifyTripActivity({
+              tripId: t.id,
+              title: t.name,
+              body: `${authorNick}: ${body.slice(0, 120)}`,
+              url: `/trip/${t.id}`,
+              excludeUserId: session?.user?.id
+            }).catch(() => undefined)
+          })
+          .catch(() => undefined)
+      }
+      return next
+    })
   }, [updateTrip])
 
   const reactToPost = useCallback((postId: string, emoji: string, playerId: string) => {

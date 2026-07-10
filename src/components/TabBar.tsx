@@ -32,7 +32,7 @@ export function TabBar({
           margin: '0 10px 10px',
           padding: '6px 8px',
           borderRadius: 16,
-          background: 'rgba(245,243,238,.92)',
+          background: 'rgba(245,243,238,.94)',
           backdropFilter: 'blur(12px)',
           WebkitBackdropFilter: 'blur(12px)',
           border: `1px solid ${c.line}`,

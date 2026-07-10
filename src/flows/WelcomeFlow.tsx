@@ -38,43 +38,36 @@ export function WelcomeFlow() {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        padding: '24px 16px',
-        background: c.bg
+        padding: '24px 16px'
       }}
     >
       <div
+        className="dt-pop"
         style={{
           maxWidth: 440,
           width: '100%',
-          background: c.card,
-          border: `2px solid ${c.goldBright}`,
-          borderRadius: 20,
-          padding: '30px 20px 24px',
-          boxShadow: '0 8px 32px rgba(13,31,60,.14)'
+          padding: '30px 24px 22px',
+          textAlign: 'center',
+          background: c.flowGradient,
+          border: `1px solid ${c.flowBorder}`,
+          borderRadius: 18,
+          boxShadow: '0 20px 60px rgba(8,20,40,.45)'
         }}
       >
-        <div style={{ textAlign: 'center', marginBottom: 20 }}>
-          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 16 }}>
-            <DalyLogo size={72} />
-          </div>
-          <div
-            className="dt-cond"
-            style={{ fontSize: 11, letterSpacing: '.2em', color: c.gold, marginBottom: 6 }}
-          >
-            THE GOLF-TRIP OPERATING SYSTEM
-          </div>
-          <div className="dt-display" style={{ fontSize: 36, fontWeight: 900, color: c.creamSoft, lineHeight: 1 }}>
-            Daly Trips
-          </div>
-          <div
-            className="dt-cond"
-            style={{ fontSize: 15, color: c.gold, letterSpacing: '.04em', marginTop: 8, fontWeight: 600 }}
-          >
-            Run the trip. Win the trip.
-          </div>
-          <div style={{ fontSize: 14, color: c.cream, lineHeight: 1.55, marginTop: 10, opacity: 0.75 }}>
-            Run your buddies&apos; golf trip like a tour event — scoring, bets, teams, and trash talk, all in one place.
-          </div>
+        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 14 }}>
+          <DalyLogo size={64} />
+        </div>
+        <div className="dt-cond" style={{ fontSize: 10, letterSpacing: '.18em', color: c.goldBright, marginBottom: 8 }}>
+          THE GOLF-TRIP OPERATING SYSTEM
+        </div>
+        <div className="dt-display" style={{ fontSize: 30, fontWeight: 900, color: '#FFFFFF', lineHeight: 1 }}>
+          Daly Trips
+        </div>
+        <div className="dt-cond" style={{ fontSize: 14, color: c.goldBright, letterSpacing: '.05em', marginTop: 9 }}>
+          Run the trip. Win the trip.
+        </div>
+        <div style={{ fontSize: 13.5, color: c.onDarkMuted, lineHeight: 1.55, marginTop: 12 }}>
+          Run your buddies&apos; golf trip like a tour event — scoring, bets, teams, and trash talk, all in one place.
         </div>
 
         {resumeTrip ? (
@@ -83,6 +76,7 @@ export function WelcomeFlow() {
             onClick={() => navigate(`/trip/${resumeTrip.id}`)}
             style={{
               width: '100%',
+              marginTop: 20,
               marginBottom: 12,
               padding: 16,
               borderRadius: 13,
@@ -93,7 +87,7 @@ export function WelcomeFlow() {
               textAlign: 'left'
             }}
           >
-            <div className="dt-cond" style={{ fontSize: 11, letterSpacing: '.14em', opacity: 0.85, marginBottom: 4 }}>
+            <div className="dt-cond" style={{ fontSize: 10, letterSpacing: '.14em', opacity: 0.85, marginBottom: 4 }}>
               CONTINUE YOUR TRIP
             </div>
             <div style={{ fontSize: 16, fontWeight: 800 }}>{resumeTrip.name}</div>
@@ -103,49 +97,35 @@ export function WelcomeFlow() {
           </button>
         ) : null}
 
-        <div
-          className="dt-cond"
-          style={{ fontSize: 11, letterSpacing: '.18em', color: c.gold, fontWeight: 700, marginBottom: 10 }}
-        >
-          WHAT YOU GET
-        </div>
-        <div style={{ display: 'grid', gap: 8 }}>
+        <div style={{ textAlign: 'left', marginTop: resumeTrip ? 0 : 20, display: 'grid', gap: 11 }}>
+          <div className="dt-cond" style={{ fontSize: 10.5, letterSpacing: '.14em', color: 'rgba(245,245,242,.5)' }}>
+            WHAT YOU GET
+          </div>
           {FEATURES.map(([title, desc], i) => (
-            <div
-              key={i}
-              style={{
-                display: 'flex',
-                gap: 12,
-                alignItems: 'center',
-                padding: '12px 14px',
-                background: c.cardFeature,
-                border: `1.5px solid ${c.goldBright}`,
-                borderRadius: 12
-              }}
-            >
+            <div key={i} style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
               <span
                 style={{
                   flexShrink: 0,
-                  width: 28,
-                  height: 28,
+                  marginTop: 1,
+                  width: 18,
+                  height: 18,
                   borderRadius: 999,
-                  background: c.gold,
-                  border: `2px solid ${c.creamSoft}`,
-                  color: c.ink,
+                  background: 'rgba(200,16,46,.2)',
+                  border: `1px solid ${c.gold}`,
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  fontSize: 13,
-                  fontWeight: 900
+                  fontSize: 10,
+                  color: c.goldBright
                 }}
               >
                 ✓
               </span>
-              <div style={{ flex: 1 }}>
-                <div className="dt-cond" style={{ fontSize: 15, fontWeight: 800, color: c.creamSoft, lineHeight: 1.2 }}>
+              <div>
+                <div className="dt-cond" style={{ fontSize: 14, fontWeight: 800, color: c.onDark, lineHeight: 1.2 }}>
                   {title}
                 </div>
-                <div style={{ fontSize: 13, color: c.cream, lineHeight: 1.4, marginTop: 3, opacity: 0.72 }}>{desc}</div>
+                <div style={{ fontSize: 12.5, color: c.onDarkMuted, lineHeight: 1.4, marginTop: 2 }}>{desc}</div>
               </div>
             </div>
           ))}
@@ -160,9 +140,9 @@ export function WelcomeFlow() {
             padding: 18,
             borderRadius: 13,
             cursor: 'pointer',
-            background: resumeTrip ? c.card : c.felt,
+            background: c.gold,
             border: `2px solid ${c.goldBright}`,
-            color: resumeTrip ? c.felt : c.ink,
+            color: c.ink,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center'
@@ -182,9 +162,9 @@ export function WelcomeFlow() {
             padding: 16,
             borderRadius: 13,
             cursor: 'pointer',
-            background: c.card,
-            border: `2px solid ${c.gold}`,
-            color: c.felt,
+            background: 'transparent',
+            border: `1.5px solid rgba(200,16,46,.45)`,
+            color: c.onDark,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center'
@@ -196,7 +176,7 @@ export function WelcomeFlow() {
         </button>
 
         {!seenDemo ? (
-          <div style={{ fontSize: 12, color: c.muted, textAlign: 'center', marginTop: 14, lineHeight: 1.5 }}>
+          <div style={{ fontSize: 12, color: 'rgba(245,245,242,.5)', textAlign: 'center', marginTop: 14, lineHeight: 1.5 }}>
             New here? Try a live sample trip before you create your own.
           </div>
         ) : null}
@@ -211,8 +191,8 @@ export function WelcomeFlow() {
             borderRadius: 13,
             cursor: 'pointer',
             background: 'transparent',
-            border: `1.5px solid ${c.lineStrong}`,
-            color: c.creamSoft,
+            border: '1.5px solid rgba(245,245,242,.2)',
+            color: 'rgba(245,245,242,.75)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center'
@@ -223,7 +203,7 @@ export function WelcomeFlow() {
           </span>
         </button>
 
-        <div style={{ fontSize: 11, color: c.cream, lineHeight: 1.6, marginTop: 16, textAlign: 'center', opacity: 0.5 }}>
+        <div style={{ fontSize: 11, color: 'rgba(245,245,242,.45)', lineHeight: 1.6, marginTop: 16, textAlign: 'center' }}>
           Tracks friendly wagers only — never places, holds, or processes bets or payments.
         </div>
       </div>

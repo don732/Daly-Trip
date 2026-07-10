@@ -2,7 +2,7 @@ import type { LeaderRow, Player, Trip } from '@/types/trip'
 import { buildLeaderboard, computeSkins } from '@/engine/scoring'
 import { formatScore } from '@/styles'
 
-const STARTER_API = import.meta.env.VITE_STARTER_API_URL as string | undefined
+const STARTER_OVERRIDE = import.meta.env.VITE_STARTER_API_URL as string | undefined
 
 const ROAST_LINES = [
   'That swing had more moving parts than a PGA Tour rules decision.',
@@ -55,19 +55,22 @@ async function callStarterApi(input: {
   history: Array<{ role: string; content: string }>
   context?: string
 }): Promise<string | null> {
-  if (!STARTER_API) return null
-  try {
-    const res = await fetch(STARTER_API, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(input)
-    })
-    if (!res.ok) return null
-    const data = (await res.json()) as { reply?: string; message?: string }
-    return data.reply || data.message || null
-  } catch {
-    return null
+  const endpoints = [STARTER_OVERRIDE, '/api/starter'].filter(Boolean) as string[]
+  for (const url of endpoints) {
+    try {
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(input)
+      })
+      if (!res.ok) continue
+      const data = (await res.json()) as { text?: string; reply?: string; message?: string }
+      return data.text || data.reply || data.message || null
+    } catch {
+      /* try next endpoint */
+    }
   }
+  return null
 }
 
 export async function askStarter(input: {
@@ -122,7 +125,7 @@ export function starterDailyDrop(trip: Trip, leaders: LeaderRow[]): string {
   const skins = computeSkins(trip)
   const top = [...leaders].sort((a, b) => a.toParNet - b.toParNet)[0]
   if (!top || !top.thru) {
-    return 'The Starter is on the first tee. Cards are clean. Wagers are live. Let\'s go.'
+    return "The Starter is on the first tee. Cards are clean. Wagers are live. Let's go."
   }
   return `${top.nick} leads net at ${formatScore(top.toParNet)} through ${top.thru}. Skins pot at $${skins.pot}${skins.carry ? ` with ${skins.carry} carrying` : ''}.`
 }

@@ -7,7 +7,7 @@ import { useTripStore } from '@/context/TripContext'
 import { AuthGate } from '@/components/AuthGate'
 import { DalyLogo } from '@/components/DalyLogo'
 import type { AppState, Player, Trip } from '@/types/trip'
-import { c, flowInput } from '@/styles'
+import { c, flowInput, flowShell } from '@/styles'
 
 const STARTER_LINES = [
   'Handicaps are suggestions. Egos are not.',
@@ -169,11 +169,10 @@ export function JoinFlow() {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          padding: '24px 20px',
-          background: c.bg
+          padding: '24px 20px'
         }}
       >
-      <div style={{ maxWidth: 480, width: '100%', position: 'relative' }}>
+      <div style={{ maxWidth: 480, width: '100%', position: 'relative', ...flowShell }}>
         <button
           onClick={() => navigate('/')}
           style={{ position: 'absolute', top: -8, right: 0, background: 'none', border: 'none', cursor: 'pointer' }}
@@ -189,10 +188,10 @@ export function JoinFlow() {
             <div className="dt-cond" style={{ fontSize: 11, letterSpacing: '.26em', color: c.gold, marginBottom: 10 }}>
               YOU&apos;VE BEEN SUMMONED
             </div>
-            <div className="dt-display" style={{ fontSize: 32, fontWeight: 900, color: c.creamSoft, lineHeight: 1.05, marginBottom: 8 }}>
+            <div className="dt-display" style={{ fontSize: 32, fontWeight: 900, color: c.onDark, lineHeight: 1.05, marginBottom: 8 }}>
               {displayTrip?.name || 'A Daly Trip'}
             </div>
-            <div className="dt-cond" style={{ fontSize: 13, color: c.muted, marginBottom: 16 }}>
+            <div className="dt-cond" style={{ fontSize: 13, color: c.onDarkMuted, marginBottom: 16 }}>
               {displayTrip
                 ? `${displayTrip.players.length} player${displayTrip.players.length === 1 ? '' : 's'} · ${displayTrip.location || 'Location TBD'}`
                 : 'Enter your join code below'}
@@ -209,12 +208,12 @@ export function JoinFlow() {
                       borderRadius: '50%',
                       marginLeft: i === 0 ? 0 : -10,
                       background: 'radial-gradient(circle at 40% 30%,#1A2744,#0D1629)',
-                      border: `2px solid ${c.bg}`,
+                      border: `2px solid ${c.flowBorder}`,
                       display: 'grid',
                       placeItems: 'center',
                       fontSize: 13,
                       fontWeight: 700,
-                      color: c.cardWarm,
+                      color: c.onDark,
                       fontFamily: "'Archivo', sans-serif"
                     }}
                   >
@@ -229,7 +228,7 @@ export function JoinFlow() {
                       borderRadius: '50%',
                       marginLeft: -10,
                       background: c.surfaceGold,
-                      border: `2px solid ${c.bg}`,
+                      border: `2px solid ${c.flowBorder}`,
                       display: 'grid',
                       placeItems: 'center',
                       fontSize: 11,
@@ -254,7 +253,7 @@ export function JoinFlow() {
                   placeItems: 'center',
                   fontSize: 18,
                   fontWeight: 700,
-                  color: c.cardWarm
+                  color: c.onDark
                 }}
               >
                 {initial}
@@ -263,8 +262,8 @@ export function JoinFlow() {
 
             <div
               style={{
-                background: 'rgba(154,124,26,.08)',
-                border: '1px solid rgba(154,124,26,.3)',
+                background: 'rgba(200,16,46,.12)',
+                border: '1px solid rgba(200,16,46,.3)',
                 borderRadius: 14,
                 padding: '12px 16px',
                 marginBottom: 24,
@@ -274,7 +273,7 @@ export function JoinFlow() {
               <div className="dt-cond" style={{ fontSize: 10, letterSpacing: '.14em', color: c.gold, marginBottom: 5 }}>
                 THE STARTER SAYS
               </div>
-              <div style={{ fontFamily: "'Archivo', sans-serif", fontSize: 13.5, color: c.cream, lineHeight: 1.5, fontStyle: 'italic' }}>
+              <div style={{ fontFamily: "'Archivo', sans-serif", fontSize: 13.5, color: c.onDark, lineHeight: 1.5, fontStyle: 'italic' }}>
                 &quot;{starterLine}&quot;
               </div>
             </div>
@@ -325,10 +324,10 @@ export function JoinFlow() {
             <div className="dt-cond" style={{ fontSize: 11, letterSpacing: '.22em', color: c.gold, marginBottom: 10 }}>
               CLAIM YOUR SPOT
             </div>
-            <div className="dt-display" style={{ fontSize: 28, fontWeight: 900, color: c.creamSoft, marginBottom: 8 }}>
+            <div className="dt-display" style={{ fontSize: 28, fontWeight: 900, color: c.onDark, marginBottom: 8 }}>
               Who are you?
             </div>
-            <p style={{ fontSize: 13, color: c.muted, marginBottom: 16, lineHeight: 1.5 }}>
+            <p style={{ fontSize: 13, color: c.onDarkMuted, marginBottom: 16, lineHeight: 1.5 }}>
               Tap your name if you&apos;re already on the roster.
             </p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 16 }}>
@@ -343,8 +342,8 @@ export function JoinFlow() {
                     padding: 14,
                     borderRadius: 12,
                     cursor: p.claimed ? 'default' : 'pointer',
-                    background: c.card,
-                    border: `1.5px solid ${c.line}`,
+                    background: 'rgba(255,255,255,0.08)',
+                    border: `1.5px solid rgba(200,16,46,0.25)`,
                     textAlign: 'left',
                     display: 'flex',
                     justifyContent: 'space-between',
@@ -352,7 +351,7 @@ export function JoinFlow() {
                     opacity: p.claimed ? 0.5 : 1
                   }}
                 >
-                  <span style={{ fontWeight: 700, color: c.creamSoft }}>
+                  <span style={{ fontWeight: 700, color: c.onDark }}>
                     {p.nick}
                     {p.claimed ? ' · claimed' : ''}
                   </span>
@@ -375,9 +374,9 @@ export function JoinFlow() {
                 padding: 12,
                 borderRadius: 12,
                 cursor: 'pointer',
-                background: c.surfaceSubtle,
-                border: `1.5px solid ${c.lineStrong}`,
-                color: c.cream,
+                background: 'rgba(255,255,255,0.06)',
+                border: `1.5px solid rgba(200,16,46,0.2)`,
+                color: c.onDark,
                 fontSize: 13
               }}
             >
@@ -398,7 +397,7 @@ export function JoinFlow() {
             <div className="dt-cond" style={{ fontSize: 11, letterSpacing: '.22em', color: c.gold, marginBottom: 10 }}>
               CONFIRM YOUR CARD
             </div>
-            <div className="dt-display" style={{ fontSize: 28, fontWeight: 900, color: c.creamSoft, marginBottom: 20 }}>
+            <div className="dt-display" style={{ fontSize: 28, fontWeight: 900, color: c.onDark, marginBottom: 20 }}>
               Scorecard details
             </div>
             <input

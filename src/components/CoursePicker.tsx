@@ -41,7 +41,7 @@ export function CoursePicker({ value, onChange }: { value: string; onChange: (na
                 textAlign: 'left',
                 padding: 10,
                 borderRadius: 10,
-                background: value === course.name ? 'rgba(201,162,75,.12)' : c.card,
+                background: value === course.name ? c.surfaceGold : c.card,
                 border: `1px solid ${c.line}`,
                 color: c.cream
               }}

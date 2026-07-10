@@ -3,7 +3,6 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import { Minus, Plus, X } from 'lucide-react'
 import { AuthGate } from '@/components/AuthGate'
 import { CoursePicker } from '@/components/CoursePicker'
-import { RosterEditor, resizeRoster } from '@/components/RosterEditor'
 import { useTripStore } from '@/context/TripContext'
 import { makeTripFromForm } from '@/engine/tripFactory'
 import { registerTripOrganizer, pushTripToCloud, getSupabase } from '@/cloudStore'
@@ -11,8 +10,8 @@ import { ensureProfile, getSession } from '@/lib/auth'
 import { recordTripPayment, startCheckout, TRIP_PRICE, verifyCheckout } from '@/lib/checkout'
 import { FORMAT_OPTIONS } from '@/engine/formats'
 import type { Trip, TripBuilderForm } from '@/types/trip'
-import { c, flowInput } from '@/styles'
-const STEPS = ['Players', 'Pay', 'Roster', 'Event Details'] as const
+import { c, flowInput, flowShell } from '@/styles'
+const STEPS = ['Players', 'Pay', 'Event Details'] as const
 const PRESETS = [4, 6, 8, 10, 12, 16] as const
 
 const INVITE_LINES = [
@@ -56,25 +55,10 @@ function shellCard(children: ReactNode) {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        padding: '24px 16px',
-        background: c.bg
+        padding: '24px 16px'
       }}
     >
-      <div
-        style={{
-          maxWidth: 440,
-          width: '100%',
-          background: c.card,
-          border: `2px solid ${c.goldBright}`,
-          borderRadius: 24,
-          padding: '24px 22px 32px',
-          maxHeight: '90vh',
-          overflowY: 'auto',
-          boxShadow: '0 12px 48px rgba(13,31,60,.22)'
-        }}
-      >
-        {children}
-      </div>
+      <div style={{ maxWidth: 440, width: '100%', ...flowShell }}>{children}</div>
     </div>
   )
 }
@@ -129,14 +113,6 @@ export function TripBuilderFlow() {
     }
   }, [searchParams, setSearchParams])
 
-  useEffect(() => {
-    if (step === 2) {
-      setForm(f =>
-        f.players.length === f.headcount ? f : { ...f, players: resizeRoster(f.players, f.headcount) }
-      )
-    }
-  }, [step, form.headcount])
-
   const total = useMemo(() => form.headcount * TRIP_PRICE, [form.headcount])
   const stepLabel = STEPS[step] || ''
   const canCreate = form.name.trim().length > 0
@@ -150,10 +126,12 @@ export function TripBuilderFlow() {
     setCreating(true)
     setCreateError('')
     try {
-      const players =
-        form.players.length === form.headcount
-          ? form.players
-          : resizeRoster(form.players, form.headcount)
+      const players = Array.from({ length: form.headcount }, (_, i) => ({
+        nick: `Player ${i + 1}`,
+        hcp: 18,
+        team: 'pine' as const,
+        venmo: ''
+      }))
       const trip = makeTripFromForm({
         name: form.name.trim(),
         location: form.location,
@@ -202,7 +180,7 @@ export function TripBuilderFlow() {
       }
 
       setCreatedTrip(trip)
-      setStep(4)
+      setStep(3)
     } catch (err) {
       const message =
         err && typeof err === 'object' && 'message' in err
@@ -233,7 +211,7 @@ export function TripBuilderFlow() {
     if (result.paid) setStep(2)
   }
 
-  const successStep = 4
+  const successStep = 3
 
   const inviteCrew = () => {
     if (!createdTrip) return
@@ -251,12 +229,12 @@ export function TripBuilderFlow() {
         <>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
         <div>
-          <div className="dt-display" style={{ fontSize: 22, fontWeight: 900, color: c.creamSoft }}>
+          <div className="dt-display" style={{ fontSize: 22, fontWeight: 900, color: '#FFFFFF' }}>
             {step < successStep ? 'New Event' : "You're in"}
           </div>
           {step < successStep ? (
-            <div className="dt-cond" style={{ fontSize: 12, color: c.muted, marginTop: 2 }}>
-              Step {step + 1} of 4 · {stepLabel}
+            <div className="dt-cond" style={{ fontSize: 12, color: 'rgba(245,245,242,.55)', marginTop: 2 }}>
+              Step {step + 1} of 3 · {stepLabel}
             </div>
           ) : null}
         </div>
@@ -277,14 +255,14 @@ export function TripBuilderFlow() {
 
       {step < successStep ? (
         <div style={{ display: 'flex', gap: 6, marginBottom: 28 }}>
-          {[0, 1, 2, 3].map(i => (
+          {[0, 1, 2].map(i => (
             <div
               key={i}
               style={{
                 flex: 1,
                 height: 4,
                 borderRadius: 99,
-                background: i < step ? c.gold : i === step ? c.goldBright : c.line
+                background: i < step ? c.gold : i === step ? c.goldBright : 'rgba(245,245,242,.15)'
               }}
             />
           ))}
@@ -293,10 +271,10 @@ export function TripBuilderFlow() {
 
       {step === 0 ? (
         <div style={{ textAlign: 'center' }}>
-          <div className="dt-display" style={{ fontSize: 26, fontWeight: 900, color: c.creamSoft, marginBottom: 6 }}>
+          <div className="dt-display" style={{ fontSize: 26, fontWeight: 900, color: c.onDark, marginBottom: 6 }}>
             How many players?
           </div>
-          <div className="dt-cond" style={{ fontSize: 13, color: c.muted, marginBottom: 32 }}>
+          <div className="dt-cond" style={{ fontSize: 13, color: c.onDarkMuted, marginBottom: 32 }}>
             You can add names and handicaps after you pay.
           </div>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 24, marginBottom: 28 }}>
@@ -307,19 +285,19 @@ export function TripBuilderFlow() {
                 width: 56,
                 height: 56,
                 borderRadius: 16,
-                background: c.cardDeep,
-                border: `2px solid ${c.line}`,
+                background: 'rgba(255,255,255,0.08)',
+                border: `2px solid rgba(200,16,46,0.25)`,
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 cursor: 'pointer'
               }}
             >
-              <Minus size={24} color={c.cream} />
+              <Minus size={24} color={c.onDark} />
             </button>
             <div
               className="dt-num"
-              style={{ minWidth: 100, textAlign: 'center', fontSize: 88, fontWeight: 900, color: c.creamSoft, lineHeight: 1 }}
+              style={{ minWidth: 100, textAlign: 'center', fontSize: 88, fontWeight: 900, color: c.onDark, lineHeight: 1 }}
             >
               {form.headcount}
             </div>
@@ -331,7 +309,7 @@ export function TripBuilderFlow() {
                 height: 56,
                 borderRadius: 16,
                 background: c.gold,
-                border: `2px solid ${c.creamSoft}`,
+                border: `2px solid ${c.goldBright}`,
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -351,9 +329,9 @@ export function TripBuilderFlow() {
                   padding: '9px 16px',
                   borderRadius: 999,
                   cursor: 'pointer',
-                  border: `1.5px solid ${form.headcount === n ? c.gold : c.line}`,
-                  background: form.headcount === n ? c.gold : c.cardDeep,
-                  color: form.headcount === n ? c.ink : c.cream
+                  border: `1.5px solid ${form.headcount === n ? c.goldBright : 'rgba(200,16,46,0.25)'}`,
+                  background: form.headcount === n ? c.gold : 'rgba(255,255,255,0.08)',
+                  color: form.headcount === n ? c.ink : c.onDark
                 }}
               >
                 <span className="dt-cond" style={{ fontSize: 14, fontWeight: form.headcount === n ? 800 : 500 }}>
@@ -372,7 +350,7 @@ export function TripBuilderFlow() {
                 borderRadius: 14,
                 cursor: 'pointer',
                 background: c.gold,
-                border: `2px solid ${c.creamSoft}`,
+                border: `2px solid ${c.goldBright}`,
                 color: c.ink
               }}
             >
@@ -386,10 +364,10 @@ export function TripBuilderFlow() {
 
       {step === 1 ? (
         <div>
-          <div className="dt-cond" style={{ fontSize: 22, fontWeight: 900, color: c.creamSoft, marginBottom: 6 }}>
+          <div className="dt-cond" style={{ fontSize: 22, fontWeight: 900, color: c.onDark, marginBottom: 6 }}>
             Unlock your trip
           </div>
-          <div style={{ fontSize: 13.5, color: c.muted, marginBottom: 24, lineHeight: 1.5 }}>
+          <div style={{ fontSize: 13.5, color: c.onDarkMuted, marginBottom: 24, lineHeight: 1.5 }}>
             One-time fee for the organizer. Every player&apos;s scoring, money, and bets — covered for the whole trip.
           </div>
           <div
@@ -397,15 +375,15 @@ export function TripBuilderFlow() {
               padding: '22px 18px',
               marginBottom: 20,
               textAlign: 'center',
-              background: c.cardFeature,
+              background: 'rgba(255,255,255,0.08)',
               border: `2px solid ${c.goldBright}`,
               borderRadius: 16
             }}
           >
-            <div className="dt-num" style={{ fontSize: 56, fontWeight: 900, color: c.creamSoft }}>
+            <div className="dt-num" style={{ fontSize: 56, fontWeight: 900, color: c.onDark }}>
               ${total}
             </div>
-            <div className="dt-cond" style={{ fontSize: 13, color: c.muted, marginTop: 4 }}>
+            <div className="dt-cond" style={{ fontSize: 13, color: c.onDarkMuted, marginTop: 4 }}>
               {form.headcount} players × ${TRIP_PRICE} · one-time
             </div>
           </div>
@@ -443,39 +421,7 @@ export function TripBuilderFlow() {
 
       {step === 2 ? (
         <div style={{ display: 'grid', gap: 16 }}>
-          <div className="dt-cond" style={{ fontSize: 22, fontWeight: 900, color: c.creamSoft, marginBottom: 2 }}>
-            Name your crew
-          </div>
-          <div style={{ fontSize: 13, color: c.muted, marginBottom: 4, lineHeight: 1.5 }}>
-            Add nicknames and handicaps. You can edit these again in the Trip tab.
-          </div>
-          <RosterEditor
-            rows={form.players}
-            onChange={players => setForm(f => ({ ...f, players }))}
-          />
-          <button
-            onClick={() => setStep(3)}
-            className="dt-btn dt-glow dt-press"
-            style={{
-              width: '100%',
-              padding: 15,
-              borderRadius: 14,
-              cursor: 'pointer',
-              background: c.gold,
-              border: 'none',
-              color: c.creamSoft
-            }}
-          >
-            <span className="dt-cond" style={{ fontSize: 14.5, fontWeight: 800, letterSpacing: '.04em' }}>
-              NEXT →
-            </span>
-          </button>
-        </div>
-      ) : null}
-
-      {step === 3 ? (
-        <div style={{ display: 'grid', gap: 16 }}>
-          <div className="dt-cond" style={{ fontSize: 22, fontWeight: 900, color: c.creamSoft, marginBottom: 2 }}>
+          <div className="dt-cond" style={{ fontSize: 22, fontWeight: 900, color: '#FFFFFF', marginBottom: 2 }}>
             Event details
           </div>
           {(
@@ -600,7 +546,7 @@ export function TripBuilderFlow() {
                     borderRadius: 10,
                     cursor: 'pointer',
                     border: `1.5px solid ${form.mode === mode ? c.gold : c.line}`,
-                    background: form.mode === mode ? 'rgba(201,162,75,.12)' : c.cardDeep,
+                    background: form.mode === mode ? 'rgba(200,16,46,.14)' : 'rgba(255,255,255,0.08)',
                     color: c.cream,
                     fontSize: 13
                   }}
@@ -655,7 +601,7 @@ export function TripBuilderFlow() {
           </div>
           <div style={{ marginTop: 8, display: 'flex', gap: 10 }}>
             <button
-              onClick={() => setStep(2)}
+              onClick={() => setStep(1)}
               className="dt-btn dt-press"
               style={{
                 flex: '0 0 auto',

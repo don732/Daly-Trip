@@ -67,7 +67,7 @@ export function AuthPanel({
   if (userId) {
     const label = email || formatPhoneLabel(session?.user?.phone) || 'account linked'
     return (
-      <div className="dt-card" style={{ padding: 14, fontSize: 13, color: c.muted }}>
+      <div style={{ padding: 4, fontSize: 13, color: c.onDarkMuted }}>
         Signed in · {label}
       </div>
     )
@@ -92,23 +92,14 @@ export function AuthPanel({
   const successMessage = message.includes('sent') || message.includes('Verifying')
 
   return (
-    <div
-      className="dt-card"
-      style={{
-        padding: '24px 22px',
-        background: c.card,
-        border: `2px solid ${c.goldBright}`,
-        borderRadius: 20,
-        boxShadow: '0 8px 32px rgba(13,31,60,.14)'
-      }}
-    >
+    <div>
       <div className="dt-cond" style={{ fontSize: 10, letterSpacing: '.14em', color: c.gold, marginBottom: 8, textTransform: 'uppercase' }}>
         {required ? 'Required' : 'Optional'}
       </div>
-      <div className="dt-display" style={{ fontSize: 22, fontWeight: 900, color: c.creamSoft, marginBottom: 6 }}>
+      <div className="dt-display" style={{ fontSize: 22, fontWeight: 900, color: c.onDark, marginBottom: 6 }}>
         {phoneEnabled && method === 'phone' ? 'Sign in with phone' : title}
       </div>
-      <div style={{ fontSize: 13, color: c.muted, marginBottom: 20, lineHeight: 1.5 }}>
+      <div style={{ fontSize: 13, color: c.onDarkMuted, marginBottom: 20, lineHeight: 1.5 }}>
         {phoneEnabled && method === 'phone'
           ? 'We text a one-time code when SMS auth is enabled in Supabase (Twilio).'
           : subtitle}
@@ -129,9 +120,9 @@ export function AuthPanel({
                 padding: 8,
                 borderRadius: 10,
                 cursor: 'pointer',
-                border: `1.5px solid ${method === m ? c.gold : c.line}`,
-                background: method === m ? 'rgba(201,162,75,.12)' : c.cardDeep,
-                color: c.cream,
+                border: `1.5px solid ${method === m ? c.gold : 'rgba(200,16,46,0.25)'}`,
+                background: method === m ? 'rgba(200,16,46,0.18)' : 'rgba(255,255,255,0.06)',
+                color: c.onDark,
                 fontSize: 12
               }}
             >
@@ -174,7 +165,7 @@ export function AuthPanel({
             shake={shake}
             autoFocus
           />
-          <p style={{ margin: '12px 0 0', fontSize: 12, color: c.muted, textAlign: 'center' }}>
+          <p style={{ margin: '12px 0 0', fontSize: 12, color: c.onDarkMuted, textAlign: 'center' }}>
             {busy ? 'Verifying…' : method === 'email' ? 'Enter the 6-digit code from your email' : 'Enter the 6-digit code from your text'}
           </p>
         </div>

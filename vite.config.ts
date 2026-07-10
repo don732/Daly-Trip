@@ -13,8 +13,8 @@ export default defineConfig({
         name: 'Daly Trips',
         short_name: 'Daly Trips',
         description: 'The operating system for golf trips — live scoring, skins, leaderboards, and settlement.',
-        theme_color: '#F5F2EA',
-        background_color: '#F5F3EE',
+        theme_color: '#C8102E',
+        background_color: '#FAFAF6',
         display: 'standalone',
         orientation: 'portrait',
         start_url: '/',
@@ -43,7 +43,9 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,svg,woff2}'],
-        navigateFallback: '/index.html'
+        navigateFallback: '/index.html',
+        runtimeCaching: [],
+        importScripts: ['push-sw.js']
       },
       devOptions: {
         enabled: true
@@ -53,6 +55,25 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url))
+    }
+  },
+  server: {
+    proxy: {
+      '/api/starter': {
+        target: process.env.VITE_SUPABASE_URL || 'https://example.supabase.co',
+        changeOrigin: true,
+        rewrite: () => '/functions/v1/starter-reply'
+      },
+      '/api/push/send': {
+        target: process.env.VITE_SUPABASE_URL || 'https://example.supabase.co',
+        changeOrigin: true,
+        rewrite: () => '/functions/v1/push-send'
+      },
+      '/api/push/subscribe': {
+        target: process.env.VITE_SUPABASE_URL || 'https://example.supabase.co',
+        changeOrigin: true,
+        rewrite: () => '/functions/v1/push-subscribe'
+      }
     }
   }
 })

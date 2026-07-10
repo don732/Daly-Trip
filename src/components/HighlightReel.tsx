@@ -32,24 +32,24 @@ export function HighlightReel({ trip, onClose }: { trip: Trip; onClose: () => vo
       const h = ctx.canvas.height
       ctx.fillStyle = '#000000'
       ctx.fillRect(0, 0, w, h)
-      ctx.fillStyle = '#C9A24B'
+      ctx.fillStyle = '#C8102E'
       ctx.fillRect(0, 0, w, 4)
-      ctx.fillStyle = '#F5F0E6'
+      ctx.fillStyle = '#F5F5F2'
       ctx.font = 'bold 32px Archivo, sans-serif'
       ctx.fillText(trip.name, 28, 56)
       ctx.font = '15px Archivo, sans-serif'
-      ctx.fillStyle = 'rgba(245,240,230,.65)'
+      ctx.fillStyle = 'rgba(245,245,242,.65)'
       const recapLine = recap.length > 72 ? `${recap.slice(0, 72)}…` : recap
       ctx.fillText(recapLine, 28, 88)
       const visible = Math.min(top.length, Math.floor(frame / 10) + 1)
-      ctx.fillStyle = '#C9A24B'
+      ctx.fillStyle = '#C8102E'
       ctx.font = 'bold 11px Archivo, sans-serif'
       ctx.fillText('FINAL NET BOARD', 28, 124)
       top.slice(0, visible).forEach((row, i) => {
         ctx.fillStyle = '#F5F0E6'
         ctx.font = '20px Archivo, sans-serif'
         ctx.fillText(`${i + 1}. ${row.nick}`, 28, 158 + i * 36)
-        ctx.fillStyle = '#C9A24B'
+        ctx.fillStyle = '#C8102E'
         ctx.textAlign = 'right'
         ctx.fillText(formatScore(row.toParNet), w - 28, 158 + i * 36)
         ctx.textAlign = 'left'
@@ -57,7 +57,7 @@ export function HighlightReel({ trip, onClose }: { trip: Trip; onClose: () => vo
       ctx.fillStyle = 'rgba(245,240,230,.55)'
       ctx.font = '14px Archivo, sans-serif'
       ctx.fillText(`Skins $${pot} · ${trip.rounds.length} round(s)`, 28, h - 36)
-      ctx.fillStyle = '#C9A24B'
+      ctx.fillStyle = '#C8102E'
       ctx.font = 'bold 12px Archivo, sans-serif'
       ctx.fillText('DALY TRIPS', 28, h - 14)
     },
@@ -178,7 +178,7 @@ export function HighlightReel({ trip, onClose }: { trip: Trip; onClose: () => vo
               marginTop: 16,
               padding: '12px 20px',
               borderRadius: 12,
-              background: 'rgba(201,162,75,.2)',
+              background: 'rgba(200,16,46,.2)',
               border: '1px solid #C9A24B',
               color: '#F5F0E6',
               textDecoration: 'none',

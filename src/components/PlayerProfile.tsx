@@ -5,6 +5,19 @@ import type { Player, Trip } from '@/types/trip'
 import { c, formatScore } from '@/styles'
 import { Flame, X } from 'lucide-react'
 
+function StatChip({ label, val, col }: { label: string; val: string; col?: string }) {
+  return (
+    <div className="dt-card" style={{ padding: 12, textAlign: 'center' }}>
+      <div className="dt-num" style={{ fontSize: 20, fontWeight: 600, color: col || c.creamSoft }}>
+        {val}
+      </div>
+      <div className="dt-cond" style={{ fontSize: 9.5, letterSpacing: '.1em', color: c.muted, marginTop: 2 }}>
+        {label}
+      </div>
+    </div>
+  )
+}
+
 export function PlayerProfile({
   player,
   trip,
@@ -64,24 +77,41 @@ export function PlayerProfile({
             <X size={20} />
           </button>
         </div>
+
         {row && row.thru > 0 ? (
-          <div style={{ marginTop: 16, padding: 12, borderRadius: 12, background: c.surfaceSubtle }}>
-            <span style={{ fontSize: 13, color: c.cream }}>
-              This round: {formatScore(row.toParNet)} net · {formatScore(row.toPar)} gross thru {row.thru}
-            </span>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8, marginTop: 16 }}>
+            <StatChip label="Net" val={formatScore(row.toParNet)} col={row.toParNet < 0 ? c.win : c.red} />
+            {player.record ? <StatChip label="Record" val={player.record} /> : <StatChip label="Thru" val={String(row.thru)} />}
+            {player.winnings != null ? (
+              <StatChip label="Winnings" val={`$${player.winnings.toLocaleString()}`} col={c.gold} />
+            ) : (
+              <StatChip label="Gross" val={formatScore(row.toPar)} />
+            )}
           </div>
         ) : null}
+
         {player.strength ? <Row label="Strength" value={player.strength} /> : null}
         {player.weakness ? <Row label="Weakness" value={player.weakness} /> : null}
         {player.choke ? <Row label="Biggest choke" value={player.choke} /> : null}
-        {player.record ? <Row label="Record" value={player.record} /> : null}
-        {player.winnings != null ? <Row label="Lifetime winnings" value={`$${player.winnings.toLocaleString()}`} /> : null}
+        {!row?.thru && player.record ? <Row label="Record" value={player.record} /> : null}
+        {player.winnings != null && !row?.thru ? (
+          <Row label="Lifetime winnings" value={`$${player.winnings.toLocaleString()}`} />
+        ) : null}
         {player.rival ? <Row label="Rival" value={player.rival} /> : null}
         {player.venmo ? <Row label="Venmo" value={player.venmo} /> : null}
         {player.badges?.length ? (
           <div style={{ marginTop: 12, display: 'flex', flexWrap: 'wrap', gap: 6 }}>
             {player.badges.map(b => (
-              <span key={b} style={{ padding: '4px 10px', borderRadius: 99, background: 'rgba(201,162,75,.12)', fontSize: 12, color: c.gold }}>
+              <span
+                key={b}
+                style={{
+                  padding: '4px 10px',
+                  borderRadius: 99,
+                  background: c.surfaceGold,
+                  fontSize: 12,
+                  color: c.gold
+                }}
+              >
                 {b}
               </span>
             ))}
@@ -93,7 +123,7 @@ export function PlayerProfile({
               marginTop: 16,
               padding: 14,
               borderRadius: 12,
-              background: 'rgba(210,96,73,.08)',
+              background: 'rgba(220,38,38,.08)',
               border: `1px solid ${c.red}`,
               fontSize: 14,
               color: c.cream,
@@ -116,9 +146,9 @@ export function PlayerProfile({
               borderRadius: 12,
               cursor: cooking ? 'default' : 'pointer',
               opacity: cooking ? 0.6 : 1,
-              background: 'rgba(210,96,73,.14)',
+              background: 'rgba(220,38,38,.14)',
               border: `1px solid ${c.red}`,
-              color: '#E8917E',
+              color: '#FCA5A5',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -127,7 +157,7 @@ export function PlayerProfile({
           >
             <Flame size={15} />
             <span className="dt-cond" style={{ fontSize: 12.5, fontWeight: 700, letterSpacing: '.05em' }}>
-              {cooking ? 'THE STARTER IS COOKING…' : `ROAST ${roastLabel}`}
+              {cooking ? 'THE STARTER IS COOKING…' : `ROAST ${roastLabel} (AI)`}
             </span>
           </button>
         ) : null}
@@ -139,7 +169,9 @@ export function PlayerProfile({
 function Row({ label, value }: { label: string; value: string }) {
   return (
     <div style={{ marginTop: 12 }}>
-      <div className="dt-cond" style={{ fontSize: 10, letterSpacing: '.1em', color: c.muted, textTransform: 'uppercase' }}>{label}</div>
+      <div className="dt-cond" style={{ fontSize: 10, letterSpacing: '.1em', color: c.muted, textTransform: 'uppercase' }}>
+        {label}
+      </div>
       <div style={{ fontSize: 14, color: c.cream, marginTop: 4, lineHeight: 1.45 }}>{value}</div>
     </div>
   )

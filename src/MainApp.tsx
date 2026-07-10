@@ -6,6 +6,7 @@ import { useTripStore, switchActiveRound } from '@/context/TripContext'
 import { getTrip } from '@/localStore'
 import { pullTripFromCloud } from '@/cloudStore'
 import { formatEmailLabel } from '@/lib/auth'
+import { notifyTripActivity } from '@/lib/push'
 import { TabBar } from '@/components/TabBar'
 import { ClubhousePanel } from '@/components/ClubhousePanel'
 import { StarterChat } from '@/components/StarterChat'
@@ -35,7 +36,7 @@ export function MainApp() {
   const { tripId } = useParams()
   const navigate = useNavigate()
   const { state, trip, updateTrip, setActiveTrip, upsertTrip, addFeedPost, reactToPost, getMyPlayerId, loadDemo } = useTripStore()
-  const { email, signOut, configured: authConfigured } = useAuth()
+  const { email, signOut, configured: authConfigured, userId } = useAuth()
   const [tab, setTab] = useState('trip')
   const [menuOpen, setMenuOpen] = useState(false)
   const [clubhouseOpen, setClubhouseOpen] = useState(false)
@@ -81,11 +82,21 @@ export function MainApp() {
   }
 
   const handleScore = (playerId: string, hole: number, score: number | null) => {
+    const player = trip.players.find(p => p.id === playerId)
     updateTrip(t => {
       const scores = { ...t.scores, [playerId]: [...(t.scores[playerId] || Array(18).fill(null))] }
       scores[playerId][hole] = score
       return { ...t, scores }
     })
+    if (score != null && player && !isDemoTrip(trip)) {
+      notifyTripActivity({
+        tripId: trip.id,
+        title: trip.name,
+        body: `${player.nick} posted ${score} on hole ${hole + 1}`,
+        url: `/trip/${trip.id}`,
+        excludeUserId: userId || undefined
+      }).catch(() => undefined)
+    }
   }
 
   const tripList = Object.values(state.trips)
@@ -94,9 +105,9 @@ export function MainApp() {
   const myPlayerNick = myPlayer?.nick || 'Player'
 
   return (
-    <div className="dt-root" style={{ minHeight: '100%', background: c.bg }}>
+    <div className="dt-root" style={{ minHeight: '100%' }}>
       <div className="dt-shell">
-        <header style={{ position: 'sticky', top: 0, zIndex: 40, background: c.bg }}>
+        <header style={{ position: 'sticky', top: 0, zIndex: 40, background: 'rgba(250,250,246,.92)', backdropFilter: 'blur(8px)' }}>
           <div
             style={{
               padding: 'calc(10px + env(safe-area-inset-top)) 16px 10px',
@@ -170,7 +181,7 @@ export function MainApp() {
                 gap: 12
               }}
             >
-              <div style={{ fontSize: 12, color: c.creamSoft, lineHeight: 1.45 }}>
+              <div style={{ fontSize: 12, color: c.cream, lineHeight: 1.45 }}>
                 <strong>Demo trip</strong> · Sample scores &amp; feed. Create your own event when ready.
               </div>
               <button
@@ -217,7 +228,7 @@ export function MainApp() {
             trip={trip}
             onClose={() => setProfilePlayer(null)}
             onRoast={body => {
-              addFeedPost(body, 'starter', 'The Starter')
+              addFeedPost(body, 'starter', 'The Starter (AI)')
               setProfilePlayer(null)
             }}
           />
@@ -268,7 +279,7 @@ export function MainApp() {
                     padding: 14,
                     borderRadius: 12,
                     marginBottom: 8,
-                    background: t.id === trip.id ? 'rgba(184,144,58,.12)' : c.card,
+                    background: t.id === trip.id ? c.surfaceGold : c.card,
                     border: `1px solid ${c.line}`,
                     color: c.cream
                   }}

@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { AuthProvider } from '@/context/AuthContext'
 import { TripProvider } from '@/context/TripContext'
@@ -7,6 +8,14 @@ import { WelcomeFlow } from '@/flows/WelcomeFlow'
 import { JoinFlow } from '@/flows/JoinFlow'
 import { TripBuilderFlow } from '@/flows/TripBuilderFlow'
 import { MainApp, resolveInitialRoute } from '@/MainApp'
+import { initPushNotifications } from '@/lib/push'
+
+function PushBootstrap() {
+  useEffect(() => {
+    initPushNotifications().catch(() => undefined)
+  }, [])
+  return null
+}
 
 export function App() {
   return (
@@ -14,6 +23,7 @@ export function App() {
       <TripProvider>
         <StyleInjector />
         <InstallPrompt />
+        <PushBootstrap />
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<WelcomeFlow />} />
